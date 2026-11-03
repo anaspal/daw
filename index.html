@@ -1,0 +1,2408 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0A7C5B">
+<meta name="description" content="دوائي — منصة للبحث عن الأدوية المتوفرة في صيدليات قطاع غزة">
+<title>دوائي — أقرب إلى الدواء</title>
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
+<link rel="icon" type="image/png" href="./logo.png">
+<script>
+/* الوضع الليلي: تطبيق الثيم قبل الرسم لتجنب الوميض */
+(function () {
+  var KEY = 'dawai-theme';
+  function meta(t) { var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', t === 'dark' ? '#0B1210' : '#0A7C5B'); }
+  var saved = null; try { saved = localStorage.getItem(KEY); } catch (e) {}
+  var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  var t = saved || (mq && mq.matches ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', t); meta(t);
+  if (mq && mq.addEventListener) mq.addEventListener('change', function (e) {
+    var s2 = null; try { s2 = localStorage.getItem(KEY); } catch (x) {}
+    if (!s2) { var n = e.matches ? 'dark' : 'light'; document.documentElement.setAttribute('data-theme', n); meta(n); window.dispatchEvent(new Event('themechange')); }
+  });
+})();
+</script>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="دوائي">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<script>
+/* PWA: التقاط حدث التثبيت مبكرًا (قد يصدر قبل تحميل التطبيق) + تسجيل الـ Service Worker */
+window.__pwa = { deferred: null };
+window.addEventListener('beforeinstallprompt', function (e) {
+  e.preventDefault();
+  window.__pwa.deferred = e;
+  window.dispatchEvent(new Event('pwa-available'));
+});
+window.addEventListener('appinstalled', function () { window.__pwa.deferred = null; });
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener('load', function () {
+    var hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.register('./sw.js').catch(function (err) { console.warn('[Dawai] SW', err); });
+    var reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (hadController && !reloaded) { reloaded = true; location.reload(); }
+    });
+  });
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* ==================== BASE ==================== */
+*,::before,::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --d50:#ECFDF5;--d100:#D1FAE5;--d200:#A7F3D0;--d600:#0A7C5B;--d700:#086348;--d800:#064E3B;
+  --g50:#F9FAFB;--g100:#F3F4F6;--g200:#E5E7EB;--g300:#D1D5DB;--g400:#9CA3AF;--g500:#6B7280;--g600:#4B5563;--g700:#374151;--g900:#111827;
+  --a50:#FFFBEB;--a200:#FDE68A;--a500:#F59E0B;--a700:#B45309;
+  --r50:#FEF2F2;--r200:#FECACA;--r700:#B91C1C;--r800:#991B1B;
+  --e50:#ECFDF5;--e200:#A7F3D0;--e800:#065F46;
+  --b50:#EFF6FF;--b200:#BFDBFE;--b900:#1E3A8A;
+}
+html{-webkit-tap-highlight-color:transparent}
+body{font-family:'Tajawal',system-ui,-apple-system,sans-serif;background:#fff;color:var(--g700);overflow-x:hidden;-webkit-font-smoothing:antialiased;min-height:100dvh;line-height:1.5}
+h1,h2,h3{color:var(--g900);font-weight:700;line-height:1.25}
+button{cursor:pointer;font-family:inherit;border:none;background:none;font-size:inherit;color:inherit}
+input,select,textarea,button{font-family:inherit;font-size:inherit}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--d600);outline-offset:2px}
+img,svg{display:block;max-width:100%}
+
+/* ==================== LAYOUT ==================== */
+.container{max-width:1100px;margin:0 auto;padding:0 16px}
+@media(min-width:640px){.container{padding:0 24px}}
+@media(min-width:1024px){.container{padding:0 32px}}
+
+.flex{display:flex}.flex-col{flex-direction:column}.flex-1{flex:1;min-width:0}.flex-wrap{flex-wrap:wrap}
+.items-center{align-items:center}.items-start{align-items:flex-start}.items-end{align-items:flex-end}
+.justify-center{justify-content:center}.justify-between{justify-content:space-between}
+.gap-1{gap:4px}.gap-1\.5{gap:6px}.gap-2{gap:8px}.gap-3{gap:12px}.gap-4{gap:16px}.gap-6{gap:24px}
+.grid{display:grid}.grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(min-width:640px){.sm-grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}.sm-grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}.sm-grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(min-width:1024px){.lg-grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}.lg-grid-side{grid-template-columns:220px 1fr}.lg-grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}.lg-grid-1{grid-template-columns:1fr}}
+.hidden{display:none}.inline-flex{display:inline-flex}.h-10{height:40px}.text-gray-800{color:#1F2937}
+@media(min-width:768px){.md-flex{display:flex}.md-hidden{display:none}}
+@media(max-width:767px){.md-only-hide{display:flex!important}}
+@media(min-width:1024px){.lg-block{display:block}.lg-hidden{display:none}.lg-sticky{position:sticky;top:70px;height:fit-content}}
+
+.min-w-0{min-width:0}.shrink-0{flex-shrink:0}.w-full{width:100%}
+.w-7{width:28px;height:28px}.w-9{width:36px;height:36px}.w-10{width:40px;height:40px}.w-12{width:48px;height:48px}
+.h-14{height:56px}
+.max-w-md{max-width:448px}.max-w-2xl{max-width:672px}.max-w-3xl{max-width:768px}.max-w-sm{max-width:384px}
+.mx-auto{margin-left:auto;margin-right:auto}.min-h-40{min-height:40px}.min-h-44{min-height:44px}.min-h-48{min-height:48px}.min-h-52{min-height:52px}
+.min-h-screen{min-height:100dvh}.min-h-60vh{min-height:60vh}
+
+/* ==================== SPACING ==================== */
+.p-1{padding:4px}.p-1\.5{padding:6px}.p-2{padding:8px}.p-3{padding:12px}.p-4{padding:16px}.p-5{padding:20px}.p-6{padding:24px}.p-7{padding:28px}
+.px-1{padding-inline:4px}.px-3{padding-inline:12px}.px-3\.5{padding-inline:14px}.px-4{padding-inline:16px}.px-6{padding-inline:24px}
+.py-1{padding-block:4px}.py-2{padding-block:8px}.py-4{padding-block:16px}.py-6{padding-block:24px}.py-8{padding-block:32px}.py-10{padding-block:40px}.py-12{padding-block:48px}.py-16{padding-block:64px}
+.pt-2{padding-top:8px}.pt-4{padding-top:16px}.pt-6{padding-top:24px}.pt-8{padding-top:32px}
+.pb-1{padding-bottom:4px}.pb-4{padding-bottom:16px}.pb-10{padding-bottom:40px}.pb-16{padding-bottom:64px}
+.ps-3{padding-inline-start:12px}.pe-10{padding-inline-end:40px}
+.mt-0\.5{margin-top:2px}.mt-1{margin-top:4px}.mt-1\.5{margin-top:6px}.mt-2{margin-top:8px}.mt-3{margin-top:12px}.mt-4{margin-top:16px}.mt-5{margin-top:20px}.mt-6{margin-top:24px}.mt-8{margin-top:32px}.mt-12{margin-top:48px}.mt-16{margin-top:64px}
+.mb-1{margin-bottom:4px}.mb-2{margin-bottom:8px}.mb-4{margin-bottom:16px}.mb-6{margin-bottom:24px}
+.me-1{margin-inline-end:4px}
+.-mx-4{margin-inline:-16px}
+
+/* ==================== TYPOGRAPHY ==================== */
+.text-xs{font-size:12px;line-height:1.5}.text-sm{font-size:14px;line-height:1.55}
+.text-base{font-size:16px}.text-lg{font-size:18px}.text-xl{font-size:20px}.text-2xl{font-size:24px}.text-3xl{font-size:30px}
+.text-10{font-size:10px}.text-11{font-size:11px}.text-15{font-size:15px}.text-26{font-size:26px}
+.font-medium{font-weight:500}.font-semibold{font-weight:600}.font-bold{font-weight:700}.font-extrabold{font-weight:800}
+.text-center{text-align:center}.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tabular-nums{font-variant-numeric:tabular-nums}.leading-tight{line-height:1.2}.leading-relaxed{line-height:1.7}.leading-none{line-height:1}
+
+/* ==================== COLORS ==================== */
+.text-gray-400{color:var(--g400)}.text-gray-500{color:var(--g500)}.text-gray-600{color:var(--g600)}.text-gray-700{color:var(--g700)}.text-gray-900{color:var(--g900)}
+.text-white{color:#fff}.text-dawai-600{color:var(--d600)}.text-dawai-700{color:var(--d700)}.text-dawai-800{color:var(--d800)}
+.text-amber-600{color:#D97706}.text-amber-700{color:var(--a700)}.text-amber-900{color:#78350F}
+.text-red-600{color:#DC2626}.text-red-700{color:var(--r700)}.text-red-800{color:var(--r800)}
+.text-emerald-800{color:var(--e800)}.text-blue-900{color:var(--b900)}
+.bg-white{background:#fff}.bg-gray-50{background:var(--g50)}.bg-gray-100{background:var(--g100)}.bg-gray-600{background:var(--g600)}.bg-gray-900{background:var(--g900)}
+.bg-dawai-50{background:var(--d50)}.bg-dawai-600{background:var(--d600)}.bg-dawai-700{background:var(--d700)}
+.bg-amber-50{background:var(--a50)}.bg-amber-500{background:var(--a500)}
+.bg-red-50{background:var(--r50)}.bg-emerald-50{background:var(--e50)}.bg-blue-50{background:var(--b50)}
+.bg-transparent{background:transparent}
+
+/* ==================== BORDERS ==================== */
+.border{border:1px solid var(--g200)}
+.border-t{border-top:1px solid var(--g200)}.border-b{border-bottom:1px solid var(--g200)}
+.border-gray-100{border-color:var(--g100)}.border-gray-200{border-color:var(--g200)}
+.border-dawai-100{border-color:var(--d100)}.border-dawai-200{border-color:var(--d200)}.border-dawai-600{border-color:var(--d600)}
+.border-amber-200{border-color:var(--a200)}.border-amber-500{border-color:var(--a500)}
+.border-red-200{border-color:var(--r200)}.border-emerald-200{border-color:var(--e200)}.border-blue-200{border-color:var(--b200)}
+.border-gray-600{border-color:var(--g600)}
+.border-dashed{border-style:dashed}
+.rounded{border-radius:4px}.rounded-lg{border-radius:8px}.rounded-xl{border-radius:12px}.rounded-2xl{border-radius:16px}.rounded-full{border-radius:9999px}
+@media(min-width:640px){.sm-rounded-2xl{border-radius:16px}}
+
+/* ==================== SHADOWS / POSITION ==================== */
+.shadow-sm{box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.shadow-card{box-shadow:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.06)}
+.shadow-xl{box-shadow:0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1)}
+.hover-shadow:hover{box-shadow:0 6px 16px rgba(16,24,40,.08)}
+.relative{position:relative}.absolute{position:absolute}.fixed{position:fixed}.sticky{position:sticky}
+.top-0{top:0}.top-half{top:50%}.end-3{inset-inline-end:12px}.inset-0{inset:0}
+.z-20{z-index:20}.z-30{z-index:30}.z-50{z-index:50}
+.translate-y-half{transform:translateY(-50%)}
+.backdrop{backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+
+/* ==================== OVERFLOW ==================== */
+.overflow-hidden{overflow:hidden}
+.scroll-x{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;-ms-overflow-style:none}
+.scroll-x::-webkit-scrollbar{display:none}
+
+/* ==================== COMPONENTS ==================== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;font-weight:600;transition:all .15s;border:none;cursor:pointer;user-select:none;text-align:center;white-space:nowrap}
+.btn-sm{min-height:40px;padding:0 12px;font-size:13px}
+.btn-md{min-height:44px;padding:0 16px;font-size:15px}
+.btn-lg{min-height:52px;padding:0 24px;font-size:16px}
+.btn-block{width:100%}
+.btn-primary{background:var(--d600);color:#fff}
+.btn-primary:hover:not(:disabled){background:var(--d700)}
+.btn-primary:disabled{background:var(--g300);cursor:not-allowed}
+.btn-secondary{background:var(--d50);color:var(--d700);border:1px solid var(--d100)}
+.btn-secondary:hover:not(:disabled){background:var(--d100)}
+.btn-ghost{background:transparent;color:var(--g700)}
+.btn-ghost:hover:not(:disabled){background:var(--g100)}
+.btn-danger{background:var(--r800);color:#fff}
+
+.card{background:#fff;border:1px solid var(--g100);border-radius:14px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.06);padding:16px}
+
+.input{width:100%;min-height:48px;padding:0 16px;border-radius:12px;background:#fff;border:1px solid var(--g200);color:var(--g900);font-size:15px;transition:all .15s}
+.input::placeholder{color:var(--g400)}
+.input:focus{outline:none;border-color:var(--d600);box-shadow:0 0 0 4px rgba(16,185,129,.15)}
+.input-label{display:block;margin-bottom:6px;font-size:13px;font-weight:500;color:var(--g700)}
+.input-group{margin-bottom:0}
+
+.badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:9999px;font-size:12px;font-weight:600;border:1px solid}
+.badge-available{background:var(--d50);color:var(--d700);border-color:var(--d200)}
+.badge-low{background:var(--a50);color:var(--a700);border-color:var(--a200)}
+.badge-out{background:var(--g100);color:var(--g600);border-color:var(--g200)}
+.badge-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.badge-available .badge-dot{background:var(--d600)}
+.badge-low .badge-dot{background:var(--a500)}
+.badge-out .badge-dot{background:var(--g400)}
+
+.icon-btn{width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;color:var(--g600);background:transparent;border:none;cursor:pointer;transition:background .15s;flex-shrink:0}
+.icon-btn:hover{background:var(--g100)}
+.icon-btn-danger{color:#DC2626}.icon-btn-danger:hover{background:var(--r50)}
+.icon-btn-primary{color:var(--d700)}.icon-btn-primary:hover{background:var(--d50)}
+
+.link-muted{color:var(--g600);transition:color .15s}
+.link-muted:hover{color:var(--d700)}
+.link-primary{color:var(--d700);font-weight:600}
+.link-primary:hover{text-decoration:underline}
+
+.nav-link{padding:8px 12px;border-radius:8px;font-size:14px;font-weight:500;color:var(--g600);transition:all .15s;display:inline-flex;align-items:center;gap:8px}
+.nav-link:hover{color:var(--g900);background:var(--g50)}
+.nav-link.active{background:var(--d50);color:var(--d700)}
+
+.search-bar{display:flex;align-items:center;gap:8px;background:#fff;border-radius:16px;border:1px solid var(--g200);transition:all .15s;box-shadow:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.06);padding:6px}
+.search-bar:focus-within{border-color:var(--d600);box-shadow:0 0 0 4px rgba(16,185,129,.15)}
+.search-input{flex:1;min-height:44px;background:transparent;border:none;outline:none;font-size:15px;padding:0}
+.search-icon{padding-inline-start:12px;color:var(--g400);flex-shrink:0}
+
+.empty-state{text-align:center;padding:48px 16px;border:1px dashed var(--g200);border-radius:16px;background:rgba(249,250,251,.5)}
+.empty-icon{width:48px;height:48px;margin:0 auto 12px;border-radius:16px;background:#fff;border:1px solid var(--g100);color:var(--g500);display:flex;align-items:center;justify-content:center}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin 1s linear infinite}
+.spinner-wrap{padding:64px 0;display:flex;justify-content:center}
+
+/* Transitions */
+.hover-bg-gray:hover{background:var(--g50)}
+.hover-bg-dawai:hover{background:var(--d50)}
+.hover-border-dawai:hover{border-color:var(--d200)}
+.hover-text-dawai:hover{color:var(--d700)}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;display:flex;align-items:flex-end;justify-content:center;padding:0}
+@media(min-width:640px){.modal-overlay{align-items:center;padding:16px}}
+.modal-content{background:#fff;width:100%;max-width:448px;border-radius:16px 16px 0 0;box-shadow:0 20px 25px -5px rgba(0,0,0,.1)}
+@media(min-width:640px){.modal-content{border-radius:16px}}
+
+/* Alert */
+.alert{border-radius:12px;padding:12px;font-size:14px;display:flex;gap:8px;align-items:flex-start;border:1px solid}
+.alert-warn{background:var(--a50);border-color:var(--a200);color:#78350F}
+.alert-error{background:var(--r50);border-color:var(--r200);color:var(--r800)}
+.alert-info{background:var(--b50);border-color:var(--b200);color:var(--b900)}
+.alert-success{background:var(--d50);border-color:var(--d200);color:var(--d800)}
+
+/* ==================== MOBILE BOTTOM NAV ==================== */
+.side-nav{display:none}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:40;display:flex;gap:4px;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));background:rgba(255,255,255,.97);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--g200);box-shadow:0 -4px 16px rgba(16,24,40,.06)}
+.bn-item{flex:1;min-width:0;min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:12px;font-size:11px;font-weight:600;color:var(--g500);transition:all .15s}
+.bn-item.active{color:var(--d700);background:var(--d50)}
+.bn-item{text-align:center;line-height:1.2}
+.site-link-hd{display:none!important}
+@media(min-width:1024px){.site-link-hd{display:flex!important}}
+.has-bottom-nav{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+@media(min-width:1024px){.side-nav{display:block}.bottom-nav{display:none}.has-bottom-nav{padding-bottom:0}}
+header.sticky{padding-top:env(safe-area-inset-top,0px)}
+
+/* Hero Image */
+.hero-img {
+  width: 180px;
+  height: 180px;
+  object-fit: contain;
+  margin: 0 auto 16px;
+  filter: drop-shadow(0 10px 15px rgba(10, 124, 91, 0.15));
+}
+@media(min-width: 640px) {
+  .hero-img { width: 220px; height: 220px; }
+}
+
+/* ==================== UI POLISH (v1.2) ==================== */
+/* الشعار دائري */
+.logo-circle{border-radius:50%;object-fit:contain;background:#fff;border:1px solid var(--d100);padding:6%;box-shadow:0 2px 8px rgba(10,124,91,.12)}
+.hero-img.logo-circle{padding:9%;border:4px solid #fff;filter:none;box-shadow:0 14px 34px rgba(10,124,91,.2),0 0 0 1px var(--d100)}
+/* الشعار: يُكبَّر داخل الدائرة (غيّر --logo-zoom لضبط الحجم: 1 = بدون تكبير، لا تتجاوز 1.2) */
+:root{--logo-zoom:1.1}
+.logo-wrap{display:block;flex-shrink:0;border-radius:50%;overflow:hidden;background:#fff;border:1px solid var(--d100);box-shadow:0 2px 8px rgba(10,124,91,.12)}
+.logo-wrap img{width:100%;height:100%;object-fit:contain;transform:scale(var(--logo-zoom))}
+.hero-img.logo-wrap{border:4px solid #fff;filter:none;box-shadow:0 14px 34px rgba(10,124,91,.2),0 0 0 1px var(--d100)}
+
+/* خلفية الهيرو */
+.hero-bg{background:radial-gradient(60% 50% at 85% 0%,rgba(167,243,208,.55),transparent 70%),radial-gradient(50% 45% at 10% 20%,rgba(209,250,229,.7),transparent 70%),linear-gradient(to bottom,#F3FDF8,#fff)}
+
+/* أزرار وبطاقات */
+.btn{transition:transform .12s,box-shadow .15s,background .15s}
+.btn:active:not(:disabled){transform:scale(.97)}
+.btn-primary{background:linear-gradient(135deg,var(--d600),#0B8F68);box-shadow:0 4px 12px rgba(10,124,91,.25)}
+.btn-primary:hover:not(:disabled){background:linear-gradient(135deg,var(--d700),var(--d600));box-shadow:0 6px 16px rgba(10,124,91,.3)}
+.btn-primary:disabled{background:var(--g300);box-shadow:none}
+.card{border-radius:16px;transition:transform .18s,box-shadow .18s,border-color .18s}
+a.card:hover,.hover-shadow:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(16,24,40,.09);border-color:var(--d100)}
+.search-bar{border-radius:18px;box-shadow:0 6px 20px rgba(16,24,40,.07)}
+.input:focus{border-color:var(--d600);box-shadow:0 0 0 4px rgba(10,124,91,.14)}
+.badge{letter-spacing:.1px}
+
+/* الشريط العلوي */
+header.sticky{transition:box-shadow .2s}
+body.scrolled header.sticky{box-shadow:0 4px 18px rgba(16,24,40,.07)}
+.nav-link{transition:all .15s}
+
+/* انتقال الصفحات */
+@keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.page-in{animation:pageIn .3s ease both}
+@media(prefers-reduced-motion:reduce){.page-in{animation:none}*{transition:none!important}}
+
+/* الذيل */
+footer{background:linear-gradient(to bottom,rgba(249,250,251,.6),var(--d50))!important}
+
+/* ==================== UI POLISH (v1.4) ==================== */
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{text-rendering:optimizeLegibility}
+::selection{background:var(--d200);color:var(--d800)}
+h1,h2{text-wrap:balance}
+p{text-wrap:pretty}
+button,a{touch-action:manipulation}
+
+/* شريط التمرير */
+html{scrollbar-width:thin;scrollbar-color:var(--d200) transparent}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--d200);border-radius:10px;border:2px solid #fff}
+::-webkit-scrollbar-thumb:hover{background:var(--d600)}
+
+/* وضوح النص المساعد */
+.input::placeholder,.search-input::placeholder{color:var(--g500);opacity:.85}
+
+/* الشريط العلوي */
+header.sticky{background:rgba(255,255,255,.88)!important;backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px)}
+.nav-link{position:relative}
+.nav-link.active{font-weight:700}
+@media(min-width:768px){
+  header .nav-link.active::after{content:"";position:absolute;inset-inline:14px;bottom:2px;height:2px;border-radius:2px;background:var(--d600)}
+}
+
+/* الأزرار */
+.btn-primary:disabled{background:var(--d100);color:var(--d600);box-shadow:none;opacity:.85}
+.btn-secondary{transition:transform .12s,background .15s,box-shadow .15s}
+.btn-secondary:hover:not(:disabled){box-shadow:0 4px 12px rgba(10,124,91,.12);transform:translateY(-1px)}
+.icon-btn:active{transform:scale(.92)}
+
+/* أزرار الاتصال داخل البطاقات */
+a[href^="tel:"]{transition:background .15s,transform .12s,box-shadow .15s}
+a[href^="tel:"]:hover{background:var(--d100)!important;box-shadow:0 3px 10px rgba(10,124,91,.15)}
+a[href^="tel:"]:active{transform:scale(.96)}
+
+/* الشرائح (المناطق / الحالة) */
+button[style*="9999px"]{transition:background .15s,border-color .15s,color .15s,transform .12s,box-shadow .15s}
+button[style*="9999px"]:hover{border-color:var(--d600)!important;box-shadow:0 3px 10px rgba(10,124,91,.12)}
+button[style*="9999px"]:active{transform:scale(.95)}
+
+/* بطاقات النتائج */
+.grid>a.card{animation:cardIn .35s ease both}
+.grid>a.card:nth-child(2){animation-delay:.04s}.grid>a.card:nth-child(3){animation-delay:.08s}
+.grid>a.card:nth-child(4){animation-delay:.12s}.grid>a.card:nth-child(5){animation-delay:.16s}
+.grid>a.card:nth-child(6){animation-delay:.2s}.grid>a.card:nth-child(n+7){animation-delay:.24s}
+@keyframes cardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+a.card img{transition:transform .25s}
+a.card:hover img{transform:scale(1.05)}
+a.card svg:last-child{transition:transform .18s}
+a.card:hover > div:first-child > svg:last-child{transform:translateX(-4px);color:var(--d600)!important}
+a.card:active{transform:scale(.99)}
+
+/* شارة "متوفر" نابضة بلطف */
+.badge-available .badge-dot{box-shadow:0 0 0 0 rgba(10,124,91,.45);animation:dotPulse 2s infinite}
+@keyframes dotPulse{0%{box-shadow:0 0 0 0 rgba(10,124,91,.45)}70%{box-shadow:0 0 0 6px rgba(10,124,91,0)}100%{box-shadow:0 0 0 0 rgba(10,124,91,0)}}
+
+/* شريط البحث */
+.search-bar:focus-within{transform:translateY(-1px);box-shadow:0 0 0 4px rgba(10,124,91,.14),0 10px 26px rgba(16,24,40,.09)}
+.search-bar:focus-within .search-icon{color:var(--d600)}
+
+/* التنبيهات */
+.alert{box-shadow:0 1px 2px rgba(16,24,40,.04)}
+
+/* الشريط السفلي (جوال) */
+.bottom-nav{border-radius:20px 20px 0 0;border-top:none;box-shadow:0 -8px 28px rgba(16,24,40,.10),0 -1px 0 var(--g100);background:rgba(255,255,255,.94)}
+.bn-item{position:relative;overflow:hidden}
+.bn-item svg{transition:transform .2s}
+.bn-item.active svg{transform:translateY(-1px) scale(1.12)}
+.bn-item.active::before{content:"";position:absolute;top:0;width:22px;height:3px;border-radius:0 0 4px 4px;background:var(--d600)}
+.bn-item:active{transform:scale(.95)}
+
+/* الذيل */
+footer .link-muted{display:inline-block;transition:color .15s,transform .15s}
+footer .link-muted:hover{transform:translateX(-3px)}
+
+/* حالة فارغة */
+.empty-state{background:linear-gradient(to bottom,#fff,rgba(249,250,251,.6))}
+
+/* وضع التطبيق المثبّت (PWA) */
+@media(display-mode:standalone){
+  html,body{overscroll-behavior-y:none}
+  body{-webkit-user-select:none;user-select:none}
+  input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text}
+}
+
+/* حركة أقل لمن يفضّل ذلك */
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .grid>a.card,.badge-available .badge-dot{animation:none!important}
+  a.card:hover,a.card:hover img{transform:none!important}
+}
+
+/* ==================== DARK MODE + TRANSITIONS (v1.6) ==================== */
+:root{--bg:#fff;--surface:#fff;color-scheme:light}
+html[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0B1210;--surface:#131C19;
+  --d50:#0F2A22;--d100:#143A2E;--d200:#1F5C46;--d600:#0E9F76;--d700:#5EE0B0;--d800:#A7F3D0;
+  --g50:#0F1714;--g100:#1B2622;--g200:#26332E;--g300:#34443E;--g400:#6F8179;--g500:#8FA098;--g600:#AEBBB5;--g700:#CBD5D0;--g900:#F1F5F3;
+  --a50:#2A2110;--a200:#5B4515;--a500:#F59E0B;--a700:#FBBF24;
+  --r50:#2B1416;--r200:#5C2326;--r700:#F87171;--r800:#FCA5A5;
+  --e50:#0F2A22;--e200:#1F5C46;--e800:#A7F3D0;
+  --b50:#0F1D33;--b200:#1E3A66;--b900:#BFDBFE;
+}
+html[data-theme="dark"] body{background:var(--bg);color:var(--g700)}
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .input,
+html[data-theme="dark"] .search-bar,
+html[data-theme="dark"] .modal-content,
+html[data-theme="dark"] .empty-icon,
+html[data-theme="dark"] .bg-white,
+html[data-theme="dark"] [style*="background:#fff"],
+html[data-theme="dark"] [style*="background: #fff"],
+html[data-theme="dark"] [style*="background: rgb(255, 255, 255)"]{background:var(--surface)!important}
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .search-bar,
+html[data-theme="dark"] .modal-content{box-shadow:0 1px 2px rgba(0,0,0,.4),0 4px 14px rgba(0,0,0,.28)}
+html[data-theme="dark"] header.sticky{background:rgba(11,18,16,.82)!important;border-bottom-color:var(--g100)!important}
+html[data-theme="dark"] .bottom-nav{background:rgba(19,28,25,.94);box-shadow:0 -8px 28px rgba(0,0,0,.5),0 -1px 0 var(--g100)}
+html[data-theme="dark"] .hero-bg{background:radial-gradient(60% 50% at 85% 0%,rgba(14,159,118,.22),transparent 70%),radial-gradient(50% 45% at 10% 20%,rgba(14,159,118,.12),transparent 70%),linear-gradient(to bottom,#0E1A16,var(--bg))}
+html[data-theme="dark"] footer{background:linear-gradient(to bottom,var(--g50),#0D1F19)!important;border-top-color:var(--g100)!important}
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{border-color:var(--bg)}
+/* الشعار يبقى على خلفية بيضاء ليظهر بوضوح */
+html[data-theme="dark"] .logo-wrap{background:#fff;border-color:var(--d200);box-shadow:0 2px 10px rgba(0,0,0,.45)}
+html[data-theme="dark"] .hero-img.logo-wrap{border-color:var(--surface);box-shadow:0 14px 34px rgba(0,0,0,.55),0 0 0 1px var(--d200)}
+/* عناصر ذات خلفية "g900" كانت داكنة: صارت فاتحة، فنعكس لون النص */
+html[data-theme="dark"] .bg-gray-900,
+html[data-theme="dark"] [style*="background:var(--g900)"],
+html[data-theme="dark"] [style*="background: var(--g900)"]{color:#0B1210!important}
+html[data-theme="dark"] .btn-danger{background:#B91C1C;color:#fff}
+html[data-theme="dark"] .alert-warn{color:#FDE68A}
+html[data-theme="dark"] .text-amber-900{color:#FDE68A}
+html[data-theme="dark"] .text-red-600{color:#F87171}
+html[data-theme="dark"] .text-amber-600{color:#FBBF24}
+html[data-theme="dark"] .btn-primary:disabled{background:var(--d100);color:var(--d700)}
+html[data-theme="dark"] .modal-overlay{background:rgba(0,0,0,.62)}
+html[data-theme="dark"] .input:focus,
+html[data-theme="dark"] .search-bar:focus-within{box-shadow:0 0 0 4px rgba(14,159,118,.22)}
+html[data-theme="dark"] .empty-state{background:rgba(19,28,25,.6);border-color:var(--g200)}
+html[data-theme="dark"] a.card:hover,html[data-theme="dark"] .hover-shadow:hover{box-shadow:0 10px 26px rgba(0,0,0,.5);border-color:var(--d200)}
+html[data-theme="dark"] a.card img{background:#fff;border-radius:10px}
+html[data-theme="dark"] .badge-out{background:var(--g100);color:var(--g600);border-color:var(--g200)}
+html[data-theme="dark"] ::selection{background:var(--d200);color:#fff}
+
+/* زر تبديل الثيم */
+.theme-toggle{width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;color:var(--g600);background:transparent;border:none;cursor:pointer;flex-shrink:0;transition:background .2s,color .2s,transform .12s}
+.theme-toggle:hover{background:var(--g100);color:var(--d700)}
+.theme-toggle:active{transform:scale(.9)}
+.theme-toggle .ti{display:inline-flex;animation:themeIcon .45s cubic-bezier(.2,.8,.2,1) both}
+@keyframes themeIcon{from{opacity:0;transform:rotate(-90deg) scale(.5)}to{opacity:1;transform:none}}
+
+/* انتقال سلس عند تبديل الثيم (يُفعَّل لحظة التبديل فقط) */
+html.theme-anim,html.theme-anim *,html.theme-anim *::before,html.theme-anim *::after{
+  transition:background-color .35s ease,color .35s ease,border-color .35s ease,box-shadow .35s ease,fill .35s ease,stroke .35s ease!important}
+
+/* ===== انتقالات الصفحات والعناصر ===== */
+main>*{animation:pageIn .32s cubic-bezier(.2,.7,.2,1) both}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes sheetUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
+@keyframes popIn{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:none}}
+@keyframes menuIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.alert{animation:fadeUp .28s ease both}
+.empty-state{animation:fadeUp .35s ease both}
+.modal-overlay{animation:fadeIn .2s ease both}
+.modal-content{animation:sheetUp .3s cubic-bezier(.2,.8,.2,1) both}
+@media(min-width:640px){.modal-content{animation:popIn .25s cubic-bezier(.2,.8,.2,1) both}}
+header nav.md-hidden{animation:menuIn .22s ease both;transform-origin:top}
+.badge{transition:background .2s,color .2s,border-color .2s}
+.input,.search-input{transition:border-color .2s,box-shadow .2s,background .2s}
+.nav-link,.bn-item,.icon-btn,.link-muted,.link-primary{transition:background .2s,color .2s,transform .15s,box-shadow .2s}
+img{transition:opacity .3s}
+img[loading="lazy"]{animation:fadeIn .4s ease both}
+
+@media(prefers-reduced-motion:reduce){
+  main>*,.alert,.empty-state,.modal-overlay,.modal-content,header nav.md-hidden,img[loading="lazy"],.theme-toggle .ti{animation:none!important}
+  html.theme-anim,html.theme-anim *{transition:none!important}
+}
+</style>
+
+<script type="importmap">
+{
+  "imports": {
+    "preact": "https://cdn.jsdelivr.net/npm/preact@10.25.0/dist/preact.module.js",
+    "preact/hooks": "https://cdn.jsdelivr.net/npm/preact@10.25.0/hooks/dist/hooks.module.js",
+    "htm": "https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.module.js",
+    "firebase/app": "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js",
+    "firebase/auth": "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js",
+    "firebase/firestore": "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js"
+  }
+}
+</script>
+</head>
+<body>
+<div id="app"><div id="boot" style="padding:48px 16px;text-align:center;font-family:system-ui,sans-serif;color:#4B5563">جارٍ تحميل دوائي…</div></div>
+<noscript><p style="padding:24px;text-align:center">يتطلب الموقع تفعيل JavaScript.</p></noscript>
+<script>
+setTimeout(function(){
+  var b=document.getElementById('boot'); if(!b) return;
+  b.innerHTML='تعذر تحميل الموقع. تأكد من الإنترنت أو حدّث المتصفح، ثم <a href="" style="color:#0A7C5B;font-weight:700">أعد المحاولة</a><div id="bootdiag" dir="ltr" style="margin-top:16px;font-size:12px;color:#6B7280"></div>';
+  var d=document.getElementById('bootdiag');
+  [['jsDelivr','https://cdn.jsdelivr.net/npm/preact@10.25.0/dist/preact.module.js'],['Firebase (gstatic)','https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js']].forEach(function(x){
+    var c=new AbortController(); setTimeout(function(){c.abort()},8000);
+    fetch(x[1],{mode:'no-cors',signal:c.signal}).then(function(){d.innerHTML+=x[0]+': OK<br>'}).catch(function(){d.innerHTML+=x[0]+': <b>unreachable</b><br>'});
+  });
+},15000);
+</script>
+
+<script type="module">
+import { h, render, createContext, Fragment } from 'preact';
+import { useState, useEffect, useContext, useMemo } from 'preact/hooks';
+import htm from 'htm';
+import { initializeApp, getApps } from 'firebase/app';
+import {
+  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
+} from 'firebase/auth';
+import {
+  deleteField, getFirestore, doc, getDoc, updateDoc, deleteDoc, addDoc,
+  collection, query, where, orderBy, limit, getDocs, onSnapshot,
+  serverTimestamp, writeBatch, getCountFromServer
+} from 'firebase/firestore';
+
+const html = htm.bind(h);
+
+// رقم إصدار الموقع: غيّره عند كل تحديث لتعرف أي نسخة تعمل عندك
+const APP_VERSION = '1.6.2';
+
+/* ============================================================
+   ⚙️  إعدادات Firebase
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyBU5ij4Gol5GWf-OZRyverikEbSNTOrPpU",
+  authDomain: "dawai-gaza.firebaseapp.com",
+  projectId: "dawai-gaza",
+  storageBucket: "dawai-gaza.firebasestorage.app",
+  messagingSenderId: "274826826695",
+  appId: "1:274826826695:web:9f23302ec0ea520cd9bfe2"
+};
+
+const CONFIGURED = !firebaseConfig.apiKey.startsWith('REPLACE');
+if (!CONFIGURED) console.warn('[Dawai] Firebase لم يُضبط. عدّل firebaseConfig في أعلى الملف.');
+
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+// App Check: ضع مفتاح reCAPTCHA v3 هنا لتفعيله (ثم فعّل Enforce من Firebase Console)
+const APPCHECK_SITE_KEY = '';
+if (APPCHECK_SITE_KEY) {
+  try {
+    const ac = await import('https://www.gstatic.com/firebasejs/11.2.0/firebase-app-check.js');
+    ac.initializeAppCheck(app, { provider: new ac.ReCaptchaV3Provider(APPCHECK_SITE_KEY), isTokenAutoRefreshEnabled: true });
+  } catch (e) { console.warn('[Dawai] App Check', e); }
+}
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ============================================================
+   🧰  أدوات مساعدة
+   ============================================================ */
+function normalizeArabic(t) {
+  return String(t || '').trim().toLowerCase()
+    .replace(/[\u064B-\u065F\u0670]/g, '')
+    .replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي')
+    .replace(/ؤ/g, 'و').replace(/ئ/g, 'ي')
+    .replace(/[^\w\s\u0600-\u06FF]/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+function normalizeLatin(t) {
+  return String(t || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+const PREFIX_END = '\uf8ff';
+
+// كلمات البحث: بادئات (من حرف واحد فأكثر) لكل كلمة، عربي/إنجليزي، حروف صغيرة
+function buildSearchTokens(...parts) {
+  const set = new Set();
+  normalizeArabic(parts.filter(Boolean).join(' ')).split(' ').filter(Boolean).forEach(w => {
+    for (let i = 1; i <= Math.min(w.length, 20); i++) set.add(w.slice(0, i));
+  });
+  return [...set].slice(0, 300);
+}
+// رقم واتساب بصيغة دولية (0599... ← 970599...)
+function toWaNumber(n) {
+  let d = String(n || '').replace(/\D/g, '');
+  if (d.startsWith('00')) d = d.slice(2); else if (d.startsWith('0')) d = '970' + d.slice(1);
+  return d;
+}
+
+function timeAgo(ts) {
+  if (!ts || typeof ts.toDate !== 'function') return 'غير متاح';
+  const ms = Date.now() - ts.toDate().getTime();
+  const min = Math.floor(ms / 60000);
+  if (min < 1) return 'الآن';
+  if (min < 60) return `قبل ${min} دقيقة`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `قبل ${hr} ساعة`;
+  const days = Math.floor(hr / 24);
+  if (days < 30) return `قبل ${days} يوم`;
+  return ts.toDate().toLocaleDateString('ar-EG');
+}
+
+/* ============================================================
+   🎨  الأيقونات (SVG بسيطة)
+   ============================================================ */
+const Svg = (p) => h('svg', {
+  xmlns: 'http://www.w3.org/2000/svg',
+  width: p.size || 24, height: p.size || 24,
+  viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
+  'stroke-width': p.sw || 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round',
+  style: p.style, class: p.class
+}, p.children);
+
+const IcoPill = (p) => h(Svg, p, h('path', { d: 'm10.5 20.5-8-8a5 5 0 0 1 7-7l8 8a5 5 0 0 1-7 7Z' }), h('path', { d: 'm8.5 8.5 7 7' }));
+const IcoSearch = (p) => h(Svg, p, h('circle', { cx: 11, cy: 11, r: 8 }), h('path', { d: 'm21 21-4.3-4.3' }));
+const IcoMapPin = (p) => h(Svg, p, h('path', { d: 'M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0' }), h('circle', { cx: 12, cy: 10, r: 3 }));
+const IcoPhone = (p) => h(Svg, p, h('path', { d: 'M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z' }));
+const IcoClock = (p) => h(Svg, p, h('circle', { cx: 12, cy: 12, r: 10 }), h('polyline', { points: '12 6 12 12 16 14' }));
+const IcoAlertTriangle = (p) => h(Svg, p, h('path', { d: 'm21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3' }), h('line', { x1: 12, y1: 9, x2: 12, y2: 13 }), h('line', { x1: 12, y1: 17, x2: '12.01', y2: 17 }));
+const IcoMenu = (p) => h(Svg, p, h('line', { x1: 4, y1: 12, x2: 20, y2: 12 }), h('line', { x1: 4, y1: 6, x2: 20, y2: 6 }), h('line', { x1: 4, y1: 18, x2: 20, y2: 18 }));
+const IcoChevronLeft = (p) => h(Svg, p, h('polyline', { points: '15 18 9 12 15 6' }));
+const IcoChevronRight = (p) => h(Svg, p, h('polyline', { points: '9 18 15 12 9 6' }));
+const IcoPlus = (p) => h(Svg, p, h('line', { x1: 12, y1: 5, x2: 12, y2: 19 }), h('line', { x1: 5, y1: 12, x2: 19, y2: 12 }));
+const IcoPencil = (p) => h(Svg, p, h('path', { d: 'M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z' }));
+const IcoTrash = (p) => h(Svg, p, h('path', { d: 'M3 6h18' }), h('path', { d: 'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6' }), h('path', { d: 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' }));
+const IcoPackage = (p) => h(Svg, p, h('path', { d: 'm7.5 4.27 9 5.15' }), h('path', { d: 'M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z' }), h('path', { d: 'm3.3 7 8.7 5 8.7-5' }), h('path', { d: 'M12 22V12' }));
+const IcoPackageOpen = (p) => h(Svg, p, h('path', { d: 'M12 22v-9' }), h('path', { d: 'm15.17 2.21 4.83 2.79' }), h('path', { d: 'M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z' }), h('path', { d: 'm3.3 7 8.7 5 8.7-5' }), h('path', { d: 'M12 22V12' }));
+const IcoPower = (p) => h(Svg, p, h('path', { d: 'M12 2v10' }), h('path', { d: 'M18.4 6.6a9 9 0 1 1-12.77.04' }));
+const IcoLogout = (p) => h(Svg, p, h('path', { d: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4' }), h('polyline', { points: '16 17 21 12 16 7' }), h('line', { x1: 21, y1: 12, x2: 9, y2: 12 }));
+const IcoDashboard = (p) => h(Svg, p, h('rect', { width: 7, height: 9, x: 3, y: 3, rx: 1 }), h('rect', { width: 7, height: 5, x: 14, y: 3, rx: 1 }), h('rect', { width: 7, height: 9, x: 14, y: 12, rx: 1 }), h('rect', { width: 7, height: 5, x: 3, y: 16, rx: 1 }));
+const IcoHome = (p) => h(Svg, p, h('path', { d: 'M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8' }), h('path', { d: 'M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' }));
+const IcoDownload = (p) => h(Svg, p, h('path', { d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' }), h('polyline', { points: '7 10 12 15 17 10' }), h('line', { x1: 12, y1: 15, x2: 12, y2: 3 }));
+const IcoMoon = (p) => h(Svg, p, h('path', { d: 'M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z' }));
+const IcoSun = (p) => h(Svg, p, h('circle', { cx: 12, cy: 12, r: 4 }), h('path', { d: 'M12 2v2' }), h('path', { d: 'M12 20v2' }), h('path', { d: 'm4.93 4.93 1.41 1.41' }), h('path', { d: 'm17.66 17.66 1.41 1.41' }), h('path', { d: 'M2 12h2' }), h('path', { d: 'M20 12h2' }), h('path', { d: 'm6.34 17.66-1.41 1.41' }), h('path', { d: 'm19.07 4.93-1.41 1.41' }));
+const IcoUser = (p) => h(Svg, p, h('circle', { cx: 12, cy: 7, r: 4 }), h('path', { d: 'M4 21v-1a7 7 0 0 1 14 0v1' }));
+const IcoShield = (p) => h(Svg, p, h('path', { d: 'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z' }));
+const IcoStore = (p) => h(Svg, p, h('path', { d: 'm2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7' }), h('path', { d: 'M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8' }), h('path', { d: 'M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4' }), h('path', { d: 'M2 7h20' }), h('path', { d: 'M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7' }));
+const IcoUsers = (p) => h(Svg, p, h('path', { d: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2' }), h('circle', { cx: 9, cy: 7, r: 4 }), h('path', { d: 'M22 21v-2a4 4 0 0 0-3-3.87' }), h('path', { d: 'M16 3.13a4 4 0 0 1 0 7.75' }));
+const IcoMessageCircle = (p) => h(Svg, p, h('path', { d: 'M7.9 20A9 9 0 1 0 4 16.1L2 22Z' }));
+const IcoCheckCircle = (p) => h(Svg, p, h('circle', { cx: 12, cy: 12, r: 10 }), h('path', { d: 'm9 12 2 2 4-4' }));
+const IcoAlertCircle = (p) => h(Svg, p, h('circle', { cx: 12, cy: 12, r: 10 }), h('line', { x1: 12, y1: 8, x2: 12, y2: 12 }), h('line', { x1: 12, y1: 16, x2: '12.01', y2: 16 }));
+const IcoRefresh = (p) => h(Svg, p, h('path', { d: 'M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8' }), h('path', { d: 'M21 3v5h-5' }), h('path', { d: 'M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16' }), h('path', { d: 'M8 16H3v5' }));
+const IcoX = (p) => h(Svg, p, h('path', { d: 'M18 6 6 18' }), h('path', { d: 'm6 6 12 12' }));
+const IcoInfo = (p) => h(Svg, p, h('circle', { cx: 12, cy: 12, r: 10 }), h('path', { d: 'M12 16v-4' }), h('path', { d: 'M12 8h.01' }));
+const IcoHeart = (p) => h(Svg, p, h('path', { d: 'M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z' }));
+const IcoShieldCheck = (p) => h(Svg, p, h('path', { d: 'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z' }), h('path', { d: 'm9 12 2 2 4-4' }));
+
+function Logo({ size, hero }) {
+  return h('span', { class: 'logo-wrap' + (hero ? ' hero-img' : ''), style: size ? `width:${size}px;height:${size}px` : undefined },
+    h('img', { src: './logo.png', alt: 'دوائي' }));
+}
+
+function Spinner({ size = 24 }) {
+  return h('svg', {
+    width: size, height: size, viewBox: '0 0 24 24', fill: 'none',
+    class: 'spin', style: 'color:var(--d600)', 'aria-label': 'جارٍ التحميل'
+  },
+    h('circle', { cx: 12, cy: 12, r: 10, stroke: 'currentColor', 'stroke-opacity': 0.2, 'stroke-width': 3 }),
+    h('path', { d: 'M22 12a10 10 0 0 0-10-10', stroke: 'currentColor', 'stroke-width': 3, 'stroke-linecap': 'round' })
+  );
+}
+
+/* ============================================================
+   🔐  Auth Context
+   ============================================================ */
+const AuthCtx = createContext({ user: null, role: null, loading: true });
+
+function AuthProvider({ children }) {
+  const [state, setState] = useState({ user: null, role: null, loading: true });
+
+  useEffect(() => {
+    let unsubDoc;
+    const unsubAuth = onAuthStateChanged(auth, (user) => {
+      if (unsubDoc) { unsubDoc(); unsubDoc = undefined; }
+      if (!user) { setState({ user: null, role: null, loading: false }); return; }
+
+      setState({ user, role: null, loading: true });
+      unsubDoc = onSnapshot(doc(db, 'users', user.uid),
+        (snap) => {
+          const data = snap.data();
+          const role = snap.exists() && data?.isActive !== false ? data?.role : null;
+          setState({ user, role, loading: false });
+        },
+        () => setState({ user, role: null, loading: false })
+      );
+    });
+    return () => { if (unsubDoc) unsubDoc(); unsubAuth(); };
+  }, []);
+
+  return h(AuthCtx.Provider, { value: state }, children);
+}
+const useAuth = () => useContext(AuthCtx);
+
+/* ============================================================
+   🧭  Routing (hash-based)
+   ============================================================ */
+function useRoute() {
+  const [hash, setHash] = useState(window.location.hash.slice(1) || '/');
+  useEffect(() => {
+    const handler = () => setHash(window.location.hash.slice(1) || '/');
+    window.addEventListener('hashchange', handler);
+    return () => window.removeEventListener('hashchange', handler);
+  }, []);
+  const [path, qstr] = hash.split('?');
+  return { path, params: new URLSearchParams(qstr || '') };
+}
+
+// تم إصلاح دالة التنقل لمنع التعليق
+function navigate(to) {
+  window.location.hash = to;
+}
+
+// المناطق ثابتة داخل الموقع نفسه (لا تُدار من لوحة الإدارة)
+const REGION_LIST = [
+  { id: 'gaza',   nameAr: 'غزة' },
+  { id: 'north',  nameAr: 'شمال غزة' },
+  { id: 'middle', nameAr: 'الوسطى' },
+  { id: 'khan',   nameAr: 'خان يونس' },
+  { id: 'rafah',  nameAr: 'رفح' }
+];
+function useRegions() {
+  const nameOf = (id) => REGION_LIST.find(r => r.id === id)?.nameAr || 'منطقة غير محددة';
+  return { regions: REGION_LIST, nameOf };
+}
+
+function Link({ href, children, class: cls, activeClass, exact, onClick, ...rest }) {
+  const { path } = useRoute();
+  const isActive = activeClass && (path === href || (!exact && href !== '/' && path.startsWith(href + '/')));
+  const handleClick = (e) => {
+    if (onClick) onClick(e);
+    e.preventDefault();
+    window.location.hash = href;
+  };
+  return html`<a href=${'#' + href} onClick=${handleClick} class=${[cls, isActive ? activeClass : ''].filter(Boolean).join(' ')} ...${rest}>${children}</a>`;
+}
+
+function goBack(fallback = '/') {
+  if (window.history.length > 1) window.history.back();
+  else navigate(fallback);
+}
+
+function BackButton({ fallback = '/', label = 'رجوع' }) {
+  return html`<button type="button" onClick=${() => goBack(fallback)} class="flex items-center gap-1 text-sm text-gray-600" style="padding:6px 4px;min-height:40px;align-self:flex-start;background:none;border:0;cursor:pointer"><${IcoChevronRight} size=${16} /> ${label}</button>`;
+}
+
+function matchPath(pattern, path) {
+  const pp = pattern.split('/').filter(Boolean);
+  const ap = path.split('/').filter(Boolean);
+  if (pp.length !== ap.length) return null;
+  const params = {};
+  for (let i = 0; i < pp.length; i++) {
+    if (pp[i].startsWith(':')) params[pp[i].slice(1)] = decodeURIComponent(ap[i]);
+    else if (pp[i] !== ap[i]) return null;
+  }
+  return params;
+}
+
+/* ============================================================
+   🎨  UI Components
+   ============================================================ */
+function Button({ variant = 'primary', size = 'md', block, children, class: cls, ...rest }) {
+  return html`<button class=${['btn', `btn-${variant}`, `btn-${size}`, block && 'btn-block', cls].filter(Boolean).join(' ')} ...${rest}>${children}</button>`;
+}
+
+function Input({ label, error, class: cls, ...rest }) {
+  const [uid] = useState(() => 'in' + Math.random().toString(36).slice(2, 8));
+  return html`
+    <div class="input-group">
+      ${label && html`<label class="input-label" for=${rest.id || uid}>${label}</label>`}
+      <input id=${uid} class=${['input', cls].filter(Boolean).join(' ')} ...${rest} />
+      ${error && html`<p class="text-sm mt-1" style="color:var(--r700)">${error}</p>`}
+    </div>
+  `;
+}
+
+function Card({ children, class: cls, ...rest }) {
+  return html`<div class=${['card', cls].filter(Boolean).join(' ')} ...${rest}>${children}</div>`;
+}
+
+function AvailabilityBadge({ status }) {
+  const labels = { available: 'متوفر', low: 'كمية محدودة', out: 'غير متوفر' };
+  return html`<span class=${'badge badge-' + status}><span class="badge-dot"></span>${labels[status] || status}</span>`;
+}
+
+function EmptyState({ icon, title, body }) {
+  return html`
+    <div class="empty-state">
+      <div class="empty-icon">${icon}</div>
+      <div class="font-bold text-gray-900">${title}</div>
+      <p class="text-sm text-gray-600 mt-1" style="max-width:24rem;margin:4px auto 0">${body}</p>
+    </div>
+  `;
+}
+
+/* ============================================================
+   📡  Data Services
+   ============================================================ */
+async function pharmacyDenorm(pharmacyId) {
+  const snap = await getDoc(doc(db, 'pharmacies', pharmacyId));
+  if (!snap.exists()) throw new Error('PHARMACY_NOT_FOUND');
+  const p = snap.data();
+  return {
+    pharmacyName: p.name, areaId: p.areaId,
+    pharmacyPhone: p.phone, pharmacyWhatsapp: p.whatsapp || ''
+  };
+}
+
+// Firestore يرفض القيم undefined: نحذف الحقول الفارغة عند الإنشاء
+const stripEmpty = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined && v !== ''));
+// وعند التعديل نحذف الحقل من المستند إذا أُفرغ
+const OPTIONAL_FIELDS = ['scientificName', 'activeIngredient', 'strength', 'dosageForm', 'quantityApprox', 'image'];
+const forUpdate = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, (v === undefined || v === '') && OPTIONAL_FIELDS.includes(k) ? deleteField() : v]).filter(([, v]) => v !== undefined));
+
+async function createInventoryItem(input) {
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error('NOT_AUTHENTICATED');
+  const d = await pharmacyDenorm(uid);
+  const ref = await addDoc(collection(db, 'inventory'), {
+    pharmacyId: uid, pharmacyActive: true, ...d, ...stripEmpty(input),
+    searchNameAr: normalizeArabic(`${input.medicineNameAr} ${input.scientificName || ''} ${input.activeIngredient || ''}`),
+    searchNameEn: normalizeLatin(`${input.medicineNameEn} ${input.scientificName || ''} ${input.activeIngredient || ''}`),
+    searchTokens: buildSearchTokens(input.medicineNameAr, input.medicineNameEn, input.scientificName, input.activeIngredient),
+    createdAt: serverTimestamp(), lastUpdatedAt: serverTimestamp()
+  });
+  return ref.id;
+}
+
+async function updateInventoryItem(id, input) {
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error('NOT_AUTHENTICATED');
+  await updateDoc(doc(db, 'inventory', id), {
+    ...forUpdate(input),
+    searchNameAr: normalizeArabic(`${input.medicineNameAr} ${input.scientificName || ''} ${input.activeIngredient || ''}`),
+    searchNameEn: normalizeLatin(`${input.medicineNameEn} ${input.scientificName || ''} ${input.activeIngredient || ''}`),
+    searchTokens: buildSearchTokens(input.medicineNameAr, input.medicineNameEn, input.scientificName, input.activeIngredient),
+    lastUpdatedAt: serverTimestamp()
+  });
+}
+
+async function updateAvailability(id, availability) {
+  await updateDoc(doc(db, 'inventory', id), { availability, lastUpdatedAt: serverTimestamp() });
+}
+
+async function deleteInventoryItem(id) { await deleteDoc(doc(db, 'inventory', id)); }
+
+// تصغير الصورة في المتصفح وتحويلها إلى نص (data URL) لتخزينها مع مستند الدواء بدون Storage
+function fileToResizedDataUrl(file, maxSide = 360, quality = 0.6) {
+  return new Promise((resolve, reject) => {
+    if (!file || !String(file.type).startsWith('image/')) return reject(new Error('NOT_IMAGE'));
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('READ_FAILED'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('BAD_IMAGE'));
+      img.onload = () => {
+        const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const cw = Math.max(1, Math.round(img.width * scale));
+        const ch = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = cw; canvas.height = ch;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cw, ch);
+        ctx.drawImage(img, 0, 0, cw, ch);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ترتيب حسب آخر تحديث على جهاز المستخدم (بدون الحاجة لفهرس مركّب في Firestore)
+const byUpdatedDesc = (a, b) => {
+  const t = (x) => x.lastUpdatedAt?.toMillis ? x.lastUpdatedAt.toMillis() : Date.now();
+  return t(b) - t(a);
+};
+
+async function listMyInventory() {
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error('NOT_AUTHENTICATED');
+  const q = query(collection(db, 'inventory'), where('pharmacyId', '==', uid), limit(200));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() })).sort(byUpdatedDesc);
+}
+
+async function getInventoryItem(id) {
+  const snap = await getDoc(doc(db, 'inventory', id));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
+async function searchInventory({ text, areaId, availability, pageSize = 20 }) {
+  const constraints = [where('pharmacyActive', '==', true)];
+  if (areaId) constraints.push(where('areaId', '==', areaId));
+  if (availability) constraints.push(where('availability', '==', availability));
+  const found = new Map();
+  let truncated = false;
+  const add = ({ docs, size }) => {
+    docs.forEach(d => { if (!found.has(d.id)) found.set(d.id, { id: d.id, ...d.data() }); });
+    if (size >= pageSize) truncated = true;
+  };
+  const col = collection(db, 'inventory');
+
+  if (text && text.trim()) {
+    const na = normalizeArabic(text);          // حروف صغيرة + توحيد عربي
+    const ne = normalizeLatin(text);
+    const words = na.split(' ').filter(Boolean);
+    const key = [...words].sort((a, b) => b.length - a.length)[0].slice(0, 20);
+    const prefixQ = (field, v) => getDocs(query(col, where(field, '>=', v), where(field, '<=', v + PREFIX_END), ...constraints, limit(pageSize)));
+    const settled = await Promise.allSettled([
+      prefixQ('searchNameAr', na),
+      prefixQ('searchNameEn', ne),
+      getDocs(query(col, where('searchTokens', 'array-contains', key), ...constraints, limit(pageSize)))
+        .then(snap => ({ size: snap.size, docs: snap.docs.filter(d => { const t = d.data().searchTokens || []; return words.every(w => t.includes(w.slice(0, 20))); }) }))
+        .catch(e => { console.warn('[Dawai] فهرس searchTokens ناقص (انشر firestore.indexes.json):', e?.message); return { size: 0, docs: [] }; })
+    ]);
+    let firstErr = null;
+    settled.forEach((r, i) => {
+      if (r.status === 'fulfilled') add(r.value);
+      else {
+        firstErr = firstErr || r.reason;
+        // رسالة الخطأ تحتوي رابطًا لإنشاء الفهرس المطلوب بضغطة واحدة
+        console.warn('[Dawai] استعلام بحث فشل (' + ['اسم عربي', 'اسم إنجليزي', 'كلمات'][i] + '):', r.reason?.message || r.reason);
+      }
+    });
+    // لو فشل شيء ولم نجد أي نتيجة، نُظهر الخطأ بدل "لا توجد نتائج" المضلِّلة
+    if (firstErr && found.size === 0) throw firstErr;
+    return { items: [...found.values()], truncated };
+  }
+  const snap = await getDocs(query(col, ...constraints, limit(pageSize)));
+  add(snap);
+  return { items: [...found.values()].sort(byUpdatedDesc), truncated };
+}
+
+async function rebuildSearchIndex(onProgress) {
+  const snap = await getDocs(collection(db, 'inventory'));
+  let n = 0;
+  for (let i = 0; i < snap.docs.length; i += 400) {
+    const batch = writeBatch(db);
+    snap.docs.slice(i, i + 400).forEach(d => {
+      const x = d.data();
+      batch.update(d.ref, {
+        searchNameAr: normalizeArabic(`${x.medicineNameAr} ${x.scientificName || ''} ${x.activeIngredient || ''}`),
+        searchNameEn: normalizeLatin(`${x.medicineNameEn} ${x.scientificName || ''} ${x.activeIngredient || ''}`),
+        searchTokens: buildSearchTokens(x.medicineNameAr, x.medicineNameEn, x.scientificName, x.activeIngredient)
+      });
+      n++;
+    });
+    await batch.commit();
+    if (onProgress) onProgress(n);
+  }
+  return n;
+}
+
+async function cascadePharmacyActive(pharmacyId, active) {
+  const snap = await getDocs(query(collection(db, 'inventory'), where('pharmacyId', '==', pharmacyId)));
+  for (let i = 0; i < snap.docs.length; i += 400) {
+    const batch = writeBatch(db);
+    snap.docs.slice(i, i + 400).forEach(d => batch.update(d.ref, { pharmacyActive: active }));
+    await batch.commit();
+  }
+}
+
+async function loadPlatformStats() {
+  const [pT, pA, iT, uT] = await Promise.all([
+    getCountFromServer(collection(db, 'pharmacies')),
+    getCountFromServer(query(collection(db, 'pharmacies'), where('isActive', '==', true))),
+    getCountFromServer(collection(db, 'inventory')),
+    getCountFromServer(collection(db, 'users'))
+  ]);
+  return { pharmaciesTotal: pT.data().count, pharmaciesActive: pA.data().count, inventoryTotal: iT.data().count, usersTotal: uT.data().count };
+}
+
+async function listPharmacies() {
+  const snap = await getDocs(query(collection(db, 'pharmacies'), orderBy('name'), limit(200)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+async function getPharmacy(id) {
+  const snap = await getDoc(doc(db, 'pharmacies', id));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+async function createPharmacyWithUser(input) {
+  const uid = input.uid.trim();
+  if (!uid || uid.length < 20) throw new Error('INVALID_UID');
+  const [u, p] = await Promise.all([
+    getDoc(doc(db, 'users', uid)), getDoc(doc(db, 'pharmacies', uid))
+  ]);
+  if (u.exists()) throw new Error('USER_EXISTS');
+  if (p.exists()) throw new Error('PHARMACY_EXISTS');
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'users', uid), {
+    role: 'pharmacy', displayName: input.name, email: input.email,
+    isActive: true, createdAt: serverTimestamp()
+  });
+  batch.set(doc(db, 'pharmacies', uid), {
+    name: input.name, areaId: input.areaId, phone: input.phone,
+    whatsapp: input.whatsapp || '', address: input.address || '',
+    isActive: true, createdAt: serverTimestamp()
+  });
+  await batch.commit();
+}
+async function updatePharmacy(id, data) { await updateDoc(doc(db, 'pharmacies', id), data); }
+async function setPharmacyActive(id, active) {
+  await updateDoc(doc(db, 'pharmacies', id), { isActive: active });
+  await updateDoc(doc(db, 'users', id), { isActive: active });
+  await cascadePharmacyActive(id, active);
+}
+
+async function listUsers() {
+  const snap = await getDocs(query(collection(db, 'users'), limit(200)));
+  return snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+}
+async function setUserActive(uid, active) { await updateDoc(doc(db, 'users', uid), { isActive: active }); }
+
+async function syncPharmacyToInventory(pharmacy) {
+  const snap = await getDocs(query(collection(db, 'inventory'), where('pharmacyId', '==', pharmacy.id)));
+  let count = 0;
+  for (let i = 0; i < snap.docs.length; i += 400) {
+    const batch = writeBatch(db);
+    snap.docs.slice(i, i + 400).forEach(d => {
+      batch.update(d.ref, {
+        pharmacyName: pharmacy.name, areaId: pharmacy.areaId,
+        pharmacyPhone: pharmacy.phone, pharmacyWhatsapp: pharmacy.whatsapp || ''
+      });
+      count++;
+    });
+    await batch.commit();
+  }
+  return count;
+}
+
+/* ============================================================
+   🌙  Theme (dark mode)
+   ============================================================ */
+function useTheme() {
+  const read = () => document.documentElement.getAttribute('data-theme') || 'light';
+  const [theme, setTheme] = useState(read());
+  useEffect(() => {
+    const sync = () => setTheme(read());
+    window.addEventListener('themechange', sync);
+    return () => window.removeEventListener('themechange', sync);
+  }, []);
+  const toggle = () => {
+    const next = read() === 'dark' ? 'light' : 'dark';
+    const root = document.documentElement;
+    root.classList.add('theme-anim');
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('dawai-theme', next); } catch (e) {}
+    const m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', next === 'dark' ? '#0B1210' : '#0A7C5B');
+    setTheme(next);
+    window.dispatchEvent(new Event('themechange'));
+    setTimeout(() => root.classList.remove('theme-anim'), 450);
+  };
+  return { theme, toggle };
+}
+
+function ThemeToggle() {
+  const { theme, toggle } = useTheme();
+  const dark = theme === 'dark';
+  return html`<button type="button" class="theme-toggle" onClick=${toggle} aria-label=${dark ? 'الوضع النهاري' : 'الوضع الليلي'} title=${dark ? 'الوضع النهاري' : 'الوضع الليلي'}>
+    <span class="ti" key=${theme}>${dark ? html`<${IcoSun} size=${20} />` : html`<${IcoMoon} size=${20} />`}</span>
+  </button>`;
+}
+
+/* ============================================================
+   📲  PWA install
+   ============================================================ */
+function useInstall() {
+  const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const [can, setCan] = useState(!!(window.__pwa && window.__pwa.deferred));
+  const [installed, setInstalled] = useState(isStandalone());
+  useEffect(() => {
+    const onAvail = () => setCan(!!window.__pwa.deferred);
+    const onInstalled = () => { setInstalled(true); setCan(false); };
+    window.addEventListener('pwa-available', onAvail);
+    window.addEventListener('appinstalled', onInstalled);
+    return () => { window.removeEventListener('pwa-available', onAvail); window.removeEventListener('appinstalled', onInstalled); };
+  }, []);
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+  const install = async () => {
+    const d = window.__pwa && window.__pwa.deferred;
+    if (d) {
+      d.prompt();
+      try { await d.userChoice; } catch (e) {}
+      window.__pwa.deferred = null; setCan(false);
+    } else if (ios) {
+      alert('لتثبيت التطبيق على آيفون: اضغط زر المشاركة في Safari ثم اختر «إضافة إلى الشاشة الرئيسية».');
+    }
+  };
+  return { show: !installed && (can || ios), install };
+}
+
+/* ============================================================
+   🖼️  Layouts
+   ============================================================ */
+function Header() {
+  const [open, setOpen] = useState(false);
+  const { user, role } = useAuth();
+  const dash = user && (role === 'admin' ? '/admin' : role === 'pharmacy' ? '/pharmacy' : null);
+  return html`
+    <header class="sticky top-0 z-30" style="background:rgba(255,255,255,.95);border-bottom:1px solid var(--g100);backdrop-filter:blur(8px)">
+      <div class="container" style="height:56px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <${Link} href="/" class="flex items-center gap-2">
+          <${Logo} size=${36} />
+          <div class="min-w-0">
+            <div class="font-extrabold text-gray-900" style="line-height:1">دوائي</div>
+            <div class="text-10 text-gray-500" style="line-height:1.2">أقرب إلى الدواء</div>
+          </div>
+        <//>
+        <div class="flex items-center gap-1">
+        <nav class="hidden md-flex items-center gap-1">
+          <${Link} href="/" class="nav-link" activeClass="active">الرئيسية<//>
+          <${Link} href="/about" class="nav-link" activeClass="active">عن المنصة<//>
+          <${Link} href="/privacy" class="nav-link" activeClass="active">الخصوصية<//>
+          <${Link} href=${dash || '/login'} class="nav-link" style="margin-inline-start:8px;background:var(--d50);color:var(--d700)">
+            <${IcoUser} size=${16} /> ${dash ? 'لوحة التحكم' : 'دخول'}
+          <//>
+        </nav>
+        <${ThemeToggle} />
+        <button class="md-hidden w-10 flex items-center justify-center text-gray-700 hover-bg-gray" style="border-radius:8px" onClick=${() => setOpen(!open)} aria-label="القائمة">
+          <${IcoMenu} size=${22} />
+        </button>
+        </div>
+      </div>
+      ${open && html`
+        <nav class="md-hidden" style="border-top:1px solid var(--g100);background:#fff">
+          <div class="container flex flex-col gap-1" style="padding:8px 16px">
+            <${Link} href="/" class="nav-link" activeClass="active" onClick=${() => setOpen(false)}>الرئيسية<//>
+            <${Link} href="/about" class="nav-link" activeClass="active" onClick=${() => setOpen(false)}>عن المنصة<//>
+            <${Link} href="/privacy" class="nav-link" activeClass="active" onClick=${() => setOpen(false)}>الخصوصية<//>
+            <${Link} href=${dash || '/login'} class="nav-link" style="background:var(--d50);color:var(--d700);margin-top:8px" onClick=${() => setOpen(false)}>
+              <${IcoUser} size=${16} /> ${dash ? 'لوحة التحكم' : 'دخول الصيدليات والإدارة'}
+            <//>
+          </div>
+        </nav>
+      `}
+    </header>
+  `;
+}
+
+function Footer() {
+  const { user, role } = useAuth();
+  const inst = useInstall();
+  const dash = user && (role === 'admin' ? '/admin' : role === 'pharmacy' ? '/pharmacy' : null);
+  return html`
+    <footer class="mt-16" style="border-top:1px solid var(--g100);background:rgba(249,250,251,.6)">
+      <div class="container grid gap-6 sm-grid-3" style="padding:32px 16px;font-size:14px">
+        <div>
+          <div class="font-extrabold text-gray-900 mb-1">دوائي</div>
+          <p class="text-gray-600 leading-relaxed">منصة مجتمعية لمساعدة سكان قطاع غزة على إيجاد الأدوية المتوفرة في الصيدليات.</p>
+        </div>
+        <div>
+          <div class="font-bold text-gray-900 mb-2">تنبيه مهم</div>
+          <p class="text-gray-600 leading-relaxed">ظهور الدواء كمتوفر لا يضمن وجوده عند وصولك. تواصل مع الصيدلية قبل التوجه إليها.</p>
+        </div>
+        <div class="flex flex-col gap-2">
+          <div class="font-bold text-gray-900 mb-1">روابط</div>
+          <${Link} href="/about" class="link-muted">عن المنصة<//>
+          <${Link} href="/privacy" class="link-muted">سياسة الخصوصية<//>
+          ${inst.show && html`<button type="button" onClick=${inst.install} class="link-muted flex items-center gap-1.5" style="text-align:start;font-weight:600;color:var(--d700)"><${IcoDownload} size=${16} /> تثبيت التطبيق</button>`}
+          <${Link} href=${dash || '/login'} class="link-muted flex items-center gap-1.5" style="margin-top:8px;font-weight:600;color:var(--d700)">
+            <${IcoUser} size=${16} /> ${dash ? 'لوحة التحكم' : 'دخول الصيدليات والإدارة'}
+          <//>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--g100)">
+        <div class="container text-center text-xs text-gray-500" style="padding:16px;font-size:12px">
+          © ${new Date().getFullYear()} دوائي — جميع الحقوق محفوظة · الإصدار <span dir="ltr">${APP_VERSION}</span>
+        </div>
+      </div>
+    </footer>
+  `;
+}
+
+function roleNavItems(role) {
+  const home = { href: '/', exact: true, icon: IcoHome, label: 'الصفحة الرئيسية' };
+  return role === 'admin'
+    ? [home,
+        { href: '/admin', exact: true, icon: IcoDashboard, label: 'نظرة عامة' },
+        { href: '/admin/pharmacies', icon: IcoStore, label: 'الصيدليات' },
+        { href: '/admin/users', icon: IcoUsers, label: 'المستخدمون' }]
+    : [home,
+        { href: '/pharmacy', exact: true, icon: IcoDashboard, label: 'نظرة عامة' },
+        { href: '/pharmacy/inventory', icon: IcoPackage, label: 'المخزون' },
+        { href: '/pharmacy/profile', icon: IcoUser, label: 'بياناتي' }];
+}
+
+function RoleBottomNav({ role }) {
+  return html`
+    <nav class="bottom-nav" aria-label="التنقل">
+      ${roleNavItems(role).map(it => html`<${Link} key=${it.href} href=${it.href} exact=${!!it.exact} class="bn-item" activeClass="active"><${it.icon} size=${22} /><span>${it.label}</span><//>`)}
+    </nav>
+  `;
+}
+
+function RoleSideNav({ role }) {
+  const items = roleNavItems(role);
+  return html`
+    <nav class="lg-sticky side-nav" aria-label="التنقل">
+      <div class="bg-white grid gap-1" style="border:1px solid var(--g100);border-radius:16px;padding:8px">
+        ${items.map((it, i) => html`
+          <${Fragment} key=${it.href}>
+            <${Link} href=${it.href} exact=${!!it.exact} class="nav-link" activeClass="active"><${it.icon} size=${16} /> <span>${it.label}</span><//>
+            ${i === 0 && html`<div style="height:1px;background:var(--g100);margin:4px 8px"></div>`}
+          <//>
+        `)}
+      </div>
+    </nav>
+  `;
+}
+
+function PublicBottomNav() {
+  return html`
+    <nav class="bottom-nav" aria-label="التنقل">
+      <${Link} href="/" exact class="bn-item" activeClass="active"><${IcoHome} size=${22} /><span>الصفحة الرئيسية</span><//>
+      <${Link} href="/search" class="bn-item" activeClass="active"><${IcoSearch} size=${22} /><span>البحث</span><//>
+      <${Link} href="/about" class="bn-item" activeClass="active"><${IcoInfo} size=${22} /><span>عن المنصة</span><//>
+      <${Link} href="/privacy" class="bn-item" activeClass="active"><${IcoShieldCheck} size=${22} /><span>الخصوصية</span><//>
+    </nav>
+  `;
+}
+
+function PublicLayout({ children }) {
+  const { user, role } = useAuth();
+  const staff = user && (role === 'admin' || role === 'pharmacy') ? role : null;
+  return html`<div class="has-bottom-nav" style="min-height:100dvh;display:flex;flex-direction:column"><${Header} /><main style="flex:1;padding-bottom:40px">${children}</main><${Footer} />${staff ? html`<${RoleBottomNav} role=${staff} />` : html`<${PublicBottomNav} />`}</div>`;
+}
+
+function PharmacyLayout({ children }) {
+  const { user } = useAuth();
+  const logout = async () => { await signOut(auth); navigate('/login'); };
+  return html`
+    <div class="has-bottom-nav" style="min-height:100dvh;background:var(--g50)">
+      <header class="sticky top-0 z-20" style="background:#fff;border-bottom:1px solid var(--g100)">
+        <div class="container" style="height:56px;display:flex;align-items:center;justify-content:space-between">
+          <div class="flex items-center gap-2">
+            <${Logo} size=${32} />
+            <div>
+              <div class="font-extrabold text-gray-900" style="line-height:1">لوحة الصيدلية</div>
+              <div class="text-11 text-gray-500 truncate" style="line-height:1.2;max-width:160px">${user?.email || ''}</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1">
+            <${ThemeToggle} />
+            <button onClick=${logout} class="flex items-center gap-1.5 px-3 h-10 text-sm" style="border-radius:8px;color:var(--g700)">
+              <${IcoLogout} size=${16} /> خروج
+            </button>
+          </div>
+        </div>
+      </header>
+      <div class="container grid gap-4 lg-grid-side" style="padding:16px">
+        <${RoleSideNav} role="pharmacy" />
+        <${RoleBottomNav} role="pharmacy" />
+        <main class="min-w-0">${children}</main>
+      </div>
+    </div>
+  `;
+}
+
+function AdminLayout({ children }) {
+  const { user } = useAuth();
+  const logout = async () => { await signOut(auth); navigate('/login'); };
+  return html`
+    <div class="has-bottom-nav" style="min-height:100dvh;background:var(--g50)">
+      <header class="sticky top-0 z-20" style="background:#fff;border-bottom:1px solid var(--g100)">
+        <div class="container" style="height:56px;display:flex;align-items:center;justify-content:space-between">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="w-9 flex items-center justify-center" style="background:var(--g900);color:#fff;border-radius:12px"><${IcoShield} size=${18} /><//>
+            <div class="min-w-0">
+              <div class="font-extrabold text-gray-900" style="line-height:1">لوحة الإدارة</div>
+              <div class="text-11 text-gray-500 truncate" style="max-width:140px">${user?.email || ''}</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1">
+            <${ThemeToggle} />
+            <button onClick=${logout} class="flex items-center gap-1.5 px-3 h-10 text-sm" style="border-radius:8px;color:var(--g700)">
+              <${IcoLogout} size=${16} /> خروج
+            </button>
+          </div>
+        </div>
+      </header>
+      <div class="container grid gap-4 lg-grid-side" style="padding:16px">
+        <${RoleSideNav} role="admin" />
+        <${RoleBottomNav} role="admin" />
+        <main class="min-w-0">${children}</main>
+      </div>
+    </div>
+  `;
+}
+
+function RequireRole({ allow, children }) {
+  const { user, role, loading } = useAuth();
+  
+  useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      navigate('/login');
+    } else if (!role || !allow.includes(role)) {
+      navigate('/');
+    }
+  }, [user, role, loading, allow]);
+
+  if (loading) return html`<div class="spinner-wrap"><${Spinner} /></div>`;
+  if (!user || !role || !allow.includes(role)) return null;
+  return children;
+}
+
+/* ============================================================
+   📄  Public Pages
+   ============================================================ */
+function HomePage() {
+  const [q, setQ] = useState('');
+  const inst = useInstall();
+  const { regions } = useRegions();
+  const REGIONS = regions.filter(r => r.isActive !== false);
+
+  const onSearch = (e) => {
+    e.preventDefault();
+    if (!q.trim()) return;
+    navigate(`/search?q=${encodeURIComponent(q.trim())}`);
+  };
+
+  return html`
+    <section class="relative overflow-hidden">
+      <div class="absolute inset-0 hero-bg" style="pointer-events:none"></div>
+      <div class="container relative" style="padding-top:32px;padding-bottom:40px">
+        <div style="max-width:42rem;margin:0 auto;text-align:center">
+          
+          <${Logo} hero />
+          
+          <h1 style="margin-top:16px;font-size:26px;font-weight:800;line-height:1.2">
+            ابحث عن دوائك
+            <span style="display:block;color:var(--d600)">في صيدليات قريبة منك</span>
+          </h1>
+          <p class="text-gray-600 mt-3" style="font-size:15px;line-height:1.7">
+            بدل التنقل بين الصيدليات، اعرف مباشرة أين يتوفر الدواء — بالاسم التجاري أو العلمي.
+          </p>
+
+          <form onSubmit=${onSearch} style="margin-top:24px">
+            <div class="search-bar">
+              <span class="search-icon"><${IcoSearch} size=${20} /></span>
+              <input value=${q} onInput=${e => setQ(e.target.value)} placeholder="اسم الدواء (عربي أو إنجليزي)..." class="search-input" autocomplete="off" inputmode="search" />
+              <${Button} type="submit" size="md" disabled=${!q.trim()}>بحث<//>
+            </div>
+          </form>
+
+          ${REGIONS.length > 0 && html`<div style="margin-top:20px">
+            <div class="text-xs font-medium text-gray-500 mb-2">أو اختر منطقتك</div>
+            <div class="scroll-x" style="justify-content:safe center;padding-inline:4px">
+              ${REGIONS.map(r => html`
+                <button key=${r.id} onClick=${() => navigate(`/search?area=${r.id}`)} class="shrink-0 text-sm font-medium" style="padding:8px 14px;border-radius:9999px;background:#fff;border:1px solid var(--g200);color:var(--g700);min-height:40px">${r.nameAr}</button>
+              `)}
+            </div>
+          </div>`}
+          ${inst.show && html`<div style="margin-top:18px"><button type="button" onClick=${inst.install} class="btn btn-secondary btn-md"><${IcoDownload} size=${18} /> تثبيت التطبيق على جهازك</button></div>`}
+        </div>
+      </div>
+    </section>
+
+    <section class="container">
+      <div class="alert alert-warn">
+        <${IcoAlertTriangle} size=${20} style="flex-shrink:0;margin-top:2px" />
+        <p class="text-sm" style="line-height:1.7"><strong>تنبيه:</strong> ظهور الدواء كمتوفر لا يعني ضمان وجوده عند وصولك. راجع وقت آخر تحديث، وتواصل مع الصيدلية قبل التوجه.</p>
+      </div>
+    </section>
+
+    <section class="container" style="margin-top:48px">
+      <h2 style="font-size:22px;font-weight:800">كيف يعمل دوائي؟</h2>
+      <div class="grid gap-3 sm-grid-3" style="margin-top:16px">
+        ${[
+          { n: 1, icon: IcoSearch, title: 'ابحث عن الدواء', body: 'بالاسم التجاري، العلمي، أو المادة الفعالة.' },
+          { n: 2, icon: IcoMapPin, title: 'شوف الصيدليات', body: 'المنطقة، حالة التوفر، وآخر تحديث لكل صيدلية.' },
+          { n: 3, icon: IcoPhone, title: 'تواصل وتأكد', body: 'اتصل بالصيدلية أو راسلها قبل التوجه.' }
+        ].map(s => html`
+          <div class="card flex gap-3 items-start">
+            <div class="w-9 shrink-0 flex items-center justify-center" style="background:var(--d50);color:var(--d700);border-radius:12px"><${s.icon} size=${18} /><//>
+            <div>
+              <span class="text-11 font-bold" style="background:var(--d50);color:var(--d700);padding:2px 6px;border-radius:4px">خطوة ${s.n}</span>
+              <div class="font-bold text-gray-900 text-sm" style="margin-top:4px">${s.title}</div>
+              <p class="text-gray-600 text-sm" style="margin-top:2px;line-height:1.65">${s.body}</p>
+            </div>
+          </div>
+        `)}
+      </div>
+    </section>
+  `;
+}
+
+function SearchPage({ route }) {
+  const initialQ = route.params.get('q') || '';
+  const areaId = route.params.get('area') || undefined;
+  const availabilityParam = route.params.get('status') || undefined;
+
+  const [q, setQ] = useState(initialQ);
+  const [items, setItems] = useState(null);
+  const [truncated, setTruncated] = useState(false);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [pageSize, setPageSize] = useState(20);
+  const { nameOf } = useRegions();
+
+  const [debouncedQ, setDebouncedQ] = useState(initialQ.trim());
+
+  // عند تغيّر الرابط (فلتر / رجوع) نزامن النص
+  useEffect(() => { setPageSize(20); setQ(initialQ); setDebouncedQ(initialQ.trim()); }, [initialQ, areaId, availabilityParam]);
+
+  // بحث فوري أثناء الكتابة (بعد توقف قصير 250ms) + تحديث الرابط بدون إضافة سجل
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const v = q.trim();
+      setDebouncedQ(v);
+      const next = new URLSearchParams(route.params);
+      if (v) next.set('q', v); else next.delete('q');
+      try { window.history.replaceState(null, '', '#/search' + (next.toString() ? '?' + next.toString() : '')); } catch (e) {}
+    }, 250);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  useEffect(() => {
+    let mounted = true;
+    setLoading(true); setError(null);
+    searchInventory({ text: debouncedQ || undefined, areaId, availability: availabilityParam, pageSize })
+      .then(r => { if (mounted) { setItems(r.items); setTruncated(r.truncated); } })
+      .catch(e => {
+        console.error('Search error:', e);
+        if (!mounted) return;
+        setItems([]); setTruncated(false);
+        setError(e?.code === 'failed-precondition'
+          ? 'البحث يحتاج فهرسًا في قاعدة البيانات. راجع إعدادات المشرف.'
+          : 'تعذر تنفيذ البحث. تحقق من الإنترنت وحاول مرة أخرى.');
+      })
+      .finally(() => mounted && setLoading(false));
+    return () => { mounted = false; };
+  }, [debouncedQ, areaId, availabilityParam, pageSize]);
+
+  const submit = (e) => {
+    e.preventDefault();
+    setDebouncedQ(q.trim());
+  };
+
+  // يبني الرابط بالنص الحالي (حتى لا نفقد ما كُتب عند تغيير الفلاتر)
+  const currentParams = () => {
+    const next = new URLSearchParams(route.params);
+    if (q.trim()) next.set('q', q.trim()); else next.delete('q');
+    return next;
+  };
+
+  const setArea = (id) => {
+    const next = currentParams();
+    if (id) next.set('area', id); else next.delete('area');
+    navigate('/search?' + next.toString());
+  };
+
+  const setAvailability = (v) => {
+    const next = currentParams();
+    if (v === 'any') next.delete('status'); else next.set('status', v);
+    navigate('/search?' + next.toString());
+  };
+
+  return html`
+    <div class="container" style="padding-top:16px;display:flex;flex-direction:column;gap:16px">
+      <${BackButton} fallback="/" />
+      <form onSubmit=${submit}>
+        <div class="search-bar">
+          <span class="search-icon"><${IcoSearch} size=${20} /></span>
+          <input value=${q} onInput=${e => setQ(e.target.value)} placeholder="ابحث بالاسم التجاري أو العلمي..." class="search-input" autocomplete="off" />
+          <${Button} type="submit" size="md">بحث<//>
+        </div>
+      </form>
+
+      ${(areaId || availabilityParam) && html`
+        <div class="flex gap-2 flex-wrap text-xs">
+          ${areaId && html`<span class="badge badge-out">المنطقة: ${nameOf(areaId)} <button onClick=${() => setArea(undefined)} style="margin-inline-start:4px">×</button></span>`}
+          ${availabilityParam && html`<span class="badge badge-out">الحالة: ${({ available: 'متوفر', low: 'محدود', out: 'غير متوفر' })[availabilityParam] || availabilityParam} <button onClick=${() => setAvailability('any')} style="margin-inline-start:4px">×</button></span>`}
+        </div>
+      `}
+
+      <div class="flex items-center gap-2 text-sm">
+        <span class="text-gray-500">الحالة:</span>
+        <div class="scroll-x" style="flex:1">
+          ${[{ v: 'any', l: 'الكل' }, { v: 'available', l: 'متوفر' }, { v: 'low', l: 'محدود' }].map(opt => {
+            const active = (availabilityParam || 'any') === opt.v;
+            return html`<button onClick=${() => setAvailability(opt.v)} class="shrink-0 text-xs font-semibold" style="padding:0 12px;min-height:36px;border-radius:9999px;border:1px solid ${active ? 'var(--g900)' : 'var(--g200)'};background:${active ? 'var(--g900)' : '#fff'};color:${active ? '#fff' : 'var(--g700)'}">${opt.l}</button>`;
+          })}
+        </div>
+      </div>
+
+      ${loading && !items && html`<div class="spinner-wrap"><${Spinner} /></div>`}
+
+      ${error && html`<div class="alert alert-error"><${IcoAlertCircle} size=${18} /><span>${error}</span></div>`}
+
+      ${!loading && !error && items && items.length === 0 && html`
+        <${EmptyState} icon=${h(IcoPackageOpen, { size: 22 })} title="لا توجد نتائج" body="جرّب اسمًا آخر أو أزل فلتر المنطقة/الحالة." />
+      `}
+
+      ${items && items.length > 0 && html`
+        <div class="text-sm text-gray-600">${items.length} نتيجة</div>
+        <div class="grid gap-3 sm-grid-2 lg-grid-3">
+          ${items.map(item => html`
+            <${Link} key=${item.id} href=${'/medicine/' + item.id} class="card hover-shadow" style="display:block">
+              <div class="flex items-start justify-between gap-3">
+                ${item.image && html`<img src=${item.image} alt="" loading="lazy" style="width:56px;height:56px;object-fit:cover;border-radius:10px;flex-shrink:0;border:1px solid var(--g100)" />`}
+                <div class="min-w-0" style="flex:1">
+                  <div class="font-bold text-gray-900 truncate">${item.medicineNameAr}</div>
+                  <div class="text-xs text-gray-500 truncate" dir="ltr" style="margin-top:2px">${item.medicineNameEn}${item.strength ? ' — ' + item.strength : ''}</div>
+                </div>
+                <${IcoChevronLeft} size=${18} style="color:var(--g400);margin-top:4px;flex-shrink:0" />
+              </div>
+              <div class="flex flex-wrap items-center gap-2" style="margin-top:12px">
+                <${AvailabilityBadge} status=${item.availability} />
+                <span class="text-xs text-gray-600 inline-flex items-center gap-1"><${IcoMapPin} size=${12} /> ${nameOf(item.areaId)}</span>
+                <span class="text-xs text-gray-500 inline-flex items-center gap-1"><${IcoClock} size=${12} /> ${timeAgo(item.lastUpdatedAt)}</span>
+              </div>
+              <div class="flex items-center justify-between gap-2" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--g100);font-size:14px">
+                <div class="min-w-0">
+                  <div class="text-xs text-gray-500">الصيدلية</div>
+                  <div class="font-semibold text-gray-900 truncate">${item.pharmacyName}</div>
+                </div>
+                <a href=${'tel:' + item.pharmacyPhone} onClick=${e => e.stopPropagation()} class="inline-flex items-center gap-1.5 text-sm font-semibold" style="padding:0 12px;min-height:40px;border-radius:8px;background:var(--d50);color:var(--d700)">
+                  <${IcoPhone} size=${14} /> اتصال
+                </a>
+              </div>
+            <//>
+          `)}
+        </div>
+        ${truncated && html`
+          <div style="text-align:center;padding-top:8px">
+            <${Button} variant="secondary" size="lg" onClick=${() => setPageSize(p => p + 20)} disabled=${loading}>${loading ? 'جارٍ التحميل...' : 'تحميل المزيد'}<//>
+          </div>
+        `}
+      `}
+    </div>
+  `;
+}
+
+function MedicineDetailsPage({ route }) {
+  const { id } = route;
+  const { nameOf } = useRegions();
+  const [item, setItem] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    getInventoryItem(id).then(i => setItem(i && i.pharmacyActive !== false ? i : null)).catch(() => setItem(null)).finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) return html`<div class="spinner-wrap"><${Spinner} /></div>`;
+  if (!item) return html`<div class="container" style="padding:48px 16px;text-align:center"><p class="text-gray-600">لم يتم العثور على هذا الدواء.</p><${Link} href="/" class="link-primary" style="margin-top:12px;display:inline-block">العودة للبحث<//></div>`;
+
+  const waLink = item.pharmacyWhatsapp
+    ? `https://wa.me/${toWaNumber(item.pharmacyWhatsapp)}?text=${encodeURIComponent(`مرحبًا، أستفسر عن توفر: ${item.medicineNameAr} ${item.strength || ''}`)}`
+    : null;
+
+  return html`
+    <div class="container" style="padding:16px;max-width:42rem;display:flex;flex-direction:column;gap:16px">
+      <${BackButton} fallback="/search" />
+
+      <${Card}>
+        ${item.image && html`<img src=${item.image} alt=${item.medicineNameAr} style="width:100%;max-height:260px;object-fit:contain;background:var(--g50);border-radius:12px;margin-bottom:12px" />`}
+        <h1 style="font-size:24px;font-weight:800">${item.medicineNameAr}</h1>
+        <div class="text-sm text-gray-600" dir="ltr" style="margin-top:4px">${item.medicineNameEn}${item.strength ? ' — ' + item.strength : ''}</div>
+        ${item.dosageForm && html`<div class="text-sm text-gray-600" style="margin-top:4px">${item.dosageForm}</div>`}
+
+        <dl class="grid grid-cols-2 gap-3 text-sm" style="margin-top:16px">
+          ${item.scientificName && html`<${Fragment}><dt class="text-gray-500">الاسم العلمي</dt><dd class="text-gray-900 font-medium" dir="ltr">${item.scientificName}</dd><//>`}
+          ${item.activeIngredient && html`<${Fragment}><dt class="text-gray-500">المادة الفعالة</dt><dd class="text-gray-900 font-medium" dir="ltr">${item.activeIngredient}</dd><//>`}
+          ${item.quantityApprox && html`<${Fragment}><dt class="text-gray-500">الكمية التقريبية</dt><dd class="text-gray-900 font-medium">${item.quantityApprox}</dd><//>`}
+        </dl>
+
+        <div class="flex flex-wrap gap-2" style="margin-top:16px">
+          <${AvailabilityBadge} status=${item.availability} />
+          <span class="inline-flex items-center gap-1 text-xs text-gray-600"><${IcoClock} size=${12} /> آخر تحديث: ${timeAgo(item.lastUpdatedAt)}</span>
+        </div>
+      <//>
+
+      <${Card}>
+        <div class="text-xs text-gray-500">الصيدلية</div>
+        <div style="font-size:18px;font-weight:700" class="text-gray-900">${item.pharmacyName}</div>
+        <div class="flex items-center gap-1 text-sm text-gray-600" style="margin-top:8px"><${IcoMapPin} size=${14} /> ${nameOf(item.areaId)}</div>
+        <div class="grid grid-cols-2 gap-2" style="margin-top:16px">
+          <a href=${'tel:' + item.pharmacyPhone} class="btn btn-primary btn-md flex items-center justify-center gap-2"><${IcoPhone} size=${16} /> اتصال</a>
+          ${waLink
+            ? html`<a href=${waLink} target="_blank" rel="noopener" class="btn btn-md flex items-center justify-center gap-2" style="background:var(--e50);color:var(--e800);border:1px solid var(--e200)"><${IcoMessageCircle} size=${16} /> واتساب</a>`
+            : html`<div class="text-sm text-center" style="min-height:44px;display:flex;align-items:center;justify-content:center;background:var(--g50);color:var(--g400);border:1px solid var(--g200);border-radius:12px">واتساب غير متاح</div>`
+          }
+        </div>
+      <//>
+
+      <div class="alert alert-warn">
+        <${IcoAlertTriangle} size=${20} style="flex-shrink:0;margin-top:2px" />
+        <p class="text-sm" style="line-height:1.7"><strong>تنبيه:</strong> ظهور الدواء كمتوفر لا يضمن وجوده لحظة وصولك. <strong>اتصل بالصيدلية قبل التوجه.</strong></p>
+      </div>
+    </div>
+  `;
+}
+
+function AboutPage() {
+  return html`
+    <div class="container" style="padding:24px 16px;max-width:48rem;display:flex;flex-direction:column;gap:20px">
+      <${BackButton} fallback="/" />
+      <div>
+        <h1 style="font-size:30px;font-weight:800">عن دوائي</h1>
+        <p class="text-gray-600" style="margin-top:8px;line-height:1.7">«دوائي» منصة خدمية مستقلة تهدف إلى تسهيل الوصول إلى الأدوية في قطاع غزة، في ظل صعوبة التنقل بين الصيدليات ومعرفة ما يتوفر لديها.</p>
+      </div>
+      <${Card}>
+        <div class="flex gap-3 items-start">
+          <div class="w-10 shrink-0 flex items-center justify-center" style="background:var(--d50);color:var(--d700);border-radius:12px"><${IcoHeart} size=${18} /><//>
+          <div>
+            <h2 style="font-size:18px;font-weight:700">فكرة بسيطة، أثر حقيقي</h2>
+            <p class="text-sm text-gray-700" style="margin-top:6px;line-height:1.7">بدلًا من تنقل المواطن بين الصيدليات، يستطيع البحث عن اسم الدواء — بالعربية أو الإنجليزية — ثم يرى الصيدليات التي أعلنت توفره، ومنطقتها، ووسائل التواصل معها.</p>
+          </div>
+        </div>
+      <//>
+      <${Card}>
+        <div class="flex gap-3 items-start">
+          <div class="w-10 shrink-0 flex items-center justify-center" style="background:var(--d50);color:var(--d700);border-radius:12px"><${IcoUsers} size=${18} /><//>
+          <div>
+            <h2 style="font-size:18px;font-weight:700">الصيدليات هي مصدر المعلومة</h2>
+            <p class="text-sm text-gray-700" style="margin-top:6px;line-height:1.7">كل صيدلية تُدير مخزونها بنفسها من خلال حساب خاص تُنشئه إدارة المنصة. المسؤولية عن دقة المعلومة وحداثتها تقع على الصيدلية، ولهذا نعرض وقت آخر تحديث بجانب كل نتيجة.</p>
+          </div>
+        </div>
+      <//>
+      <${Card}>
+        <div class="flex gap-3 items-start">
+          <div class="w-10 shrink-0 flex items-center justify-center" style="background:var(--d50);color:var(--d700);border-radius:12px"><${IcoShieldCheck} size=${18} /><//>
+          <div>
+            <h2 style="font-size:18px;font-weight:700">ما لا تقدمه المنصة</h2>
+            <ul class="text-sm text-gray-700" style="margin-top:6px;line-height:1.7;list-style:disc;list-style-position:inside">
+              <li>لا تُقدّم نصائح طبية أو جرعات أو بدائل دوائية.</li>
+              <li>ليست بديلًا عن استشارة الطبيب أو الصيدلي.</li>
+              <li>لا تضمن توفّر الدواء لحظة وصولك إلى الصيدلية.</li>
+            </ul>
+          </div>
+        </div>
+      <//>
+      <div class="alert alert-warn">
+        <${IcoAlertTriangle} size=${20} style="flex-shrink:0;margin-top:2px" />
+        <p class="text-sm" style="line-height:1.7"><strong>تذكير مهم:</strong> ظهور الدواء كمتوفر لا يعني ضمان وجوده عند وصولك. تواصل مع الصيدلية قبل التوجه.</p>
+      </div>
+      <${Link} href="/privacy" class="link-primary">سياسة الخصوصية ←<//>
+    </div>
+  `;
+}
+
+function PrivacyPage() {
+  const sections = [
+    { t: '1. مبدأ عام', b: '«دوائي» منصة خدمية لا تسعى إلى جمع بيانات شخصية عن المواطنين. يمكنك استخدام الموقع للبحث عن الأدوية دون تسجيل حساب.' },
+    { t: '2. بيانات الزائر', b: 'لا نجمع اسمك أو بريدك أو رقم هاتفك عند التصفح. قد تُسجَّل بعض المعلومات التقنية تلقائيًا من قِبل مزوّد الاستضافة وخدمات Firebase لأغراض الأمان فقط.' },
+    { t: '3. بيانات الصيدليات', b: 'تُنشأ حسابات الصيدليات من قِبل إدارة المنصة. تُخزَّن: اسم الصيدلية، المنطقة، الهاتف، الواتساب (اختياري)، العنوان (اختياري)، وبيانات الدخول ومخزون الأدوية — وتُعرض للعامة بهدف خدمة المواطنين.' },
+    { t: '4. الكوكيز والتخزين المحلي', b: 'لا نستخدم كوكيز تتبّع. قد يستخدم المتصفح تخزينًا محليًا لأغراض تقنية بحتة مثل الاحتفاظ بجلسة دخول الصيدلية.' },
+    { t: '5. مكافحة إساءة الاستخدام', b: 'قد تستخدم المنصة Firebase App Check للتحقق من أن الطلبات تصدر من الموقع نفسه، وهذا يُسجَّل لدى Google لأغراض الأمان فقط.' },
+    { t: '6. حقوقك', b: 'لأي صيدلية الحق في طلب تصحيح بياناتها أو حذف حسابها بمراسلة إدارة المنصة. حذف الحساب يؤدي إلى إزالة بيانات الصيدلية وأدويتها من نتائج البحث.' },
+    { t: '7. تحديثات السياسة', b: 'قد تُحدَّث هذه السياسة عند إضافة ميزات جديدة. يعكس تاريخ "آخر تحديث" أعلى الصفحة النسخة السارية.' }
+  ];
+  return html`
+    <div class="container" style="padding:24px 16px;max-width:48rem;display:flex;flex-direction:column;gap:16px">
+      <${BackButton} fallback="/" />
+      <h1 style="font-size:30px;font-weight:800">سياسة الخصوصية</h1>
+      <p class="text-sm text-gray-500">آخر تحديث: نوفمبر 2026</p>
+      ${sections.map(s => html`<div><h2 style="font-size:18px;font-weight:700;margin-bottom:4px">${s.t}</h2><p class="text-gray-700" style="font-size:15px;line-height:1.75">${s.b}</p></div>`)}
+      <${Link} href="/about" class="link-primary">← العودة إلى عن المنصة<//>
+    </div>
+  `;
+}
+
+/* ============================================================
+   🔑  Login
+   ============================================================ */
+function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    if (!CONFIGURED) { setError('لم تُضبط إعدادات Firebase بعد. عدّل firebaseConfig في أعلى الملف.'); return; }
+    setError(null); setLoading(true);
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
+      const userSnap = await getDoc(doc(db, 'users', cred.user.uid));
+      if (!userSnap.exists() || userSnap.data().isActive === false) {
+        await auth.signOut();
+        setError('هذا الحساب غير مفعّل أو غير مصرح له بالدخول.');
+        return;
+      }
+      const role = userSnap.data().role;
+      if (role === 'admin') navigate('/admin');
+      else if (role === 'pharmacy') navigate('/pharmacy');
+      else { await auth.signOut(); setError('هذا الحساب لا يملك صلاحية الدخول إلى لوحة التحكم.'); }
+    } catch (err) {
+      const msgs = {
+        'auth/invalid-credential': 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
+        'auth/user-disabled': 'هذا الحساب موقوف.',
+        'auth/too-many-requests': 'محاولات كثيرة. انتظر قليلًا.',
+        'auth/network-request-failed': 'تعذر الاتصال. تحقق من الإنترنت.',
+        'auth/invalid-api-key': 'إعدادات Firebase غير مكتملة.'
+      };
+      setError(msgs[err?.code] || 'حدث خطأ غير متوقع. حاول مرة أخرى.');
+    } finally { setLoading(false); }
+  };
+
+  return html`
+    <div style="min-height:100dvh;display:flex;flex-direction:column;background:var(--g50)">
+      <div class="container flex items-center justify-between" style="padding:24px 16px">
+        <${Link} href="/" class="flex items-center gap-2">
+          <${Logo} size=${36} />
+          <span class="font-extrabold text-gray-900">دوائي</span>
+        <//>
+        <${ThemeToggle} />
+      </div>
+      <div class="flex-1 flex items-start justify-center" style="padding:0 16px 40px">
+        <div style="width:100%;max-width:448px;margin-top:40px">
+          <${Card} class="p-6">
+            <h1 style="font-size:20px;font-weight:800">دخول لوحة التحكم</h1>
+            <p class="text-sm text-gray-600" style="margin-top:4px">هذه الصفحة مخصصة للصيدليات المعتمدة وإدارة المنصة فقط.</p>
+            ${!CONFIGURED && html`<div class="alert alert-warn" style="margin-top:16px"><${IcoAlertCircle} size=${18} style="flex-shrink:0;margin-top:2px" /><span>إعدادات Firebase غير مكتملة. الدخول لن يعمل.</span></div>`}
+            <form onSubmit=${onSubmit} style="margin-top:20px;display:flex;flex-direction:column;gap:16px">
+              <${Input} label="البريد الإلكتروني" type="email" autocomplete="username" required value=${email} onInput=${e => setEmail(e.target.value)} />
+              <${Input} label="كلمة المرور" type="password" autocomplete="current-password" required value=${password} onInput=${e => setPassword(e.target.value)} />
+              ${error && html`<div class="alert alert-error" role="alert"><span>${error}</span></div>`}
+              <${Button} type="submit" size="lg" block disabled=${loading || !CONFIGURED}>${loading ? 'جارٍ الدخول...' : 'دخول'}<//>
+            </form>
+            <p class="text-xs text-gray-500" style="margin-top:20px;line-height:1.65">لا تملك حسابًا؟ حسابات الصيدليات تُنشأ من قِبل إدارة المنصة فقط.</p>
+          <//>
+          <div style="text-align:center;margin-top:16px"><${Link} href="/" class="text-sm text-gray-600">← العودة للموقع<//></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   💊  Pharmacy Pages
+   ============================================================ */
+function PharmacyDashboardPage() {
+  const [items, setItems] = useState(null);
+  useEffect(() => { listMyInventory().then(setItems).catch(() => setItems([])); }, []);
+  const stats = [
+    { icon: IcoPackage, label: 'عدد الأدوية', value: items ? items.length : '—', hint: 'في مخزونك' },
+    { icon: IcoClock, label: 'آخر تحديث', value: items && items.length ? timeAgo(items[0].lastUpdatedAt) : '—', hint: 'لأي دواء', small: true },
+    { icon: IcoAlertTriangle, label: 'نواقص', value: items ? items.filter(i => i.availability !== 'available').length : '—', hint: 'محدود أو غير متوفر' }
+  ];
+  return html`
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div>
+        <h1 style="font-size:20px;font-weight:800">أهلًا بك</h1>
+        <p class="text-sm text-gray-600" style="margin-top:4px">من هنا تُدير مخزون صيدليتك. حدّث البيانات بانتظام ليصل المواطنون إلى معلومة دقيقة.</p>
+      </div>
+      <div class="grid gap-3 sm-grid-3">
+        ${stats.map(s => html`
+          <div class="card">
+            <div class="flex items-center gap-2 text-xs font-medium text-gray-500">
+              <span class="w-7 flex items-center justify-center" style="background:var(--d50);color:var(--d700);border-radius:8px"><${s.icon} size=${18} /></span>
+              ${s.label}
+            </div>
+            <div style="margin-top:8px;font-size:${s.small ? 18 : 24}px;font-weight:800" class="text-gray-900">${s.value}</div>
+            <div class="text-xs text-gray-500" style="margin-top:2px">${s.hint}</div>
+          </div>
+        `)}
+      </div>
+      <${Card}>
+        <div class="font-bold text-gray-900">ابدأ من صفحة المخزون</div>
+        <p class="text-sm text-gray-600" style="margin-top:4px;line-height:1.7">أضف أدويتك، وحدّث حالتها بانتظام. تظهر أدويتك للمواطنين في نتائج البحث مباشرة بعد إضافتها.</p>
+      <//>
+    </div>
+  `;
+}
+
+function PharmacyInventoryPage() {
+  const [items, setItems] = useState(null);
+  const [error, setError] = useState(null);
+  const [q, setQ] = useState('');
+
+  useEffect(() => {
+    listMyInventory().then(setItems).catch(e => setError(e?.message || 'تعذر تحميل المخزون'));
+  }, []);
+
+  const filtered = useMemo(() => {
+    if (!items) return [];
+    if (!q.trim()) return items;
+    const na = normalizeArabic(q), ne = normalizeLatin(q);
+    return items.filter(i => (i.searchNameAr || '').includes(na) || (i.searchNameEn || '').includes(ne));
+  }, [items, q]);
+
+  const onDelete = async (item) => {
+    if (!confirm(`حذف «${item.medicineNameAr}» نهائيًا؟`)) return;
+    try {
+      await deleteInventoryItem(item.id);
+      setItems(prev => prev.filter(i => i.id !== item.id));
+    } catch { alert('تعذر الحذف.'); }
+  };
+
+  const onToggle = async (item, next) => {
+    const prev = item.availability;
+    setItems(list => list.map(i => i.id === item.id ? { ...i, availability: next } : i));
+    try { await updateAvailability(item.id, next); }
+    catch { setItems(list => list.map(i => i.id === item.id ? { ...i, availability: prev } : i)); alert('تعذر التحديث.'); }
+  };
+
+  return html`
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h1 style="font-size:20px;font-weight:800">المخزون</h1>
+          <p class="text-sm text-gray-600" style="margin-top:2px">${items ? items.length + ' دواء' : '—'}</p>
+        </div>
+        <${Link} href="/pharmacy/inventory/new"><${Button} size="md"><${IcoPlus} size=${18} /> إضافة<//><//>
+      </div>
+
+      <div class="relative">
+        <span class="absolute top-half translate-y-half end-3" style="color:var(--g400);pointer-events:none"><${IcoSearch} size=${18} /></span>
+        <input class="input" style="padding-inline-end:40px" placeholder="ابحث داخل مخزون صيدليتك..." value=${q} onInput=${e => setQ(e.target.value)} />
+      </div>
+
+      ${error && html`<div class="alert alert-error"><span>${error}</span></div>`}
+      ${items === null && !error && html`<div class="spinner-wrap"><${Spinner} /></div>`}
+
+      ${items && filtered.length === 0 && html`
+        <${EmptyState} icon=${h(IcoPackage, { size: 22 })} title=${items.length === 0 ? 'لا يوجد أدوية بعد' : 'لا توجد نتائج'} body=${items.length === 0 ? 'ابدأ بإضافة أول دواء في مخزون صيدليتك.' : 'جرّب كلمة بحث أخرى.'} />
+      `}
+
+      ${filtered.length > 0 && html`
+        <div class="grid gap-3">
+          ${filtered.map(item => html`
+            <div class="card">
+              <div class="flex items-start justify-between gap-3">
+                ${item.image && html`<img src=${item.image} alt="" loading="lazy" style="width:56px;height:56px;object-fit:cover;border-radius:10px;flex-shrink:0;border:1px solid var(--g100)" />`}
+                <div class="min-w-0" style="flex:1">
+                  <div class="font-bold text-gray-900 truncate">${item.medicineNameAr}</div>
+                  ${item.medicineNameEn && html`<div class="text-xs text-gray-500 truncate" dir="ltr" style="margin-top:2px">${item.medicineNameEn}${item.strength ? ' — ' + item.strength : ''}</div>`}
+                  <div class="flex flex-wrap items-center gap-2" style="margin-top:8px">
+                    <${AvailabilityBadge} status=${item.availability} />
+                    <span class="text-xs text-gray-500">آخر تحديث: ${timeAgo(item.lastUpdatedAt)}</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                  <${Link} href=${'/pharmacy/inventory/' + item.id} class="icon-btn" aria-label="تعديل"><${IcoPencil} size=${17} /><//>
+                  <button class="icon-btn icon-btn-danger" onClick=${() => onDelete(item)} aria-label="حذف"><${IcoTrash} size=${17} /></button>
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-1.5" style="margin-top:12px">
+                ${['available', 'low', 'out'].map(s => {
+                  const active = item.availability === s;
+                  const bg = active ? (s === 'available' ? 'var(--d600)' : s === 'low' ? 'var(--a500)' : 'var(--g600)') : '#fff';
+                  const fg = active ? '#fff' : 'var(--g700)';
+                  const label = s === 'available' ? 'متوفر' : s === 'low' ? 'محدود' : 'غير متوفر';
+                  return html`<button onClick=${() => onToggle(item, s)} class="text-xs font-semibold" style="min-height:40px;border-radius:8px;border:1px solid ${active ? bg : 'var(--g200)'};background:${bg};color:${fg}">${label}</button>`;
+                })}
+              </div>
+            </div>
+          `)}
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function InventoryForm({ initial, onSubmit, submitLabel, title }) {
+  const EMPTY = { medicineNameAr: '', medicineNameEn: '', scientificName: '', activeIngredient: '', strength: '', dosageForm: '', availability: 'available', quantityApprox: '', image: '' };
+  const [values, setValues] = useState(initial || EMPTY);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  const set = (k, v) => setValues(prev => ({ ...prev, [k]: v }));
+  const [imgBusy, setImgBusy] = useState(false);
+
+  const onPickImage = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    setError(null); setImgBusy(true);
+    try {
+      const url = await fileToResizedDataUrl(file);
+      if (url.length > 150000) throw new Error('TOO_BIG');
+      set('image', url);
+    } catch { setError('تعذر استخدام هذه الصورة. جرّب صورة أخرى (JPG أو PNG).'); }
+    finally { setImgBusy(false); }
+  };
+
+  const handle = async (e) => {
+    e.preventDefault();
+    if (imgBusy) return;
+    if (!values.medicineNameAr.trim() || !values.medicineNameEn.trim()) {
+      setError('الاسم العربي والإنجليزي مطلوبان.'); return;
+    }
+    setError(null); setSaving(true);
+    try {
+      await onSubmit(values);
+      navigate('/pharmacy/inventory');
+    } catch (err) {
+      setError(err?.message === 'PHARMACY_NOT_FOUND'
+        ? 'لم يتم العثور على بيانات صيدليتك. تواصل مع الإدارة.'
+        : 'تعذر الحفظ. حاول مرة أخرى.');
+    } finally { setSaving(false); }
+  };
+
+  return html`
+    <div style="max-width:42rem">
+      <h1 style="font-size:20px;font-weight:800;margin-bottom:16px">${title}</h1>
+      <${Card}>
+        <form onSubmit=${handle} style="display:flex;flex-direction:column;gap:16px">
+          <${Input} label="الاسم العربي *" value=${values.medicineNameAr} onInput=${e => set('medicineNameAr', e.target.value)} placeholder="مثال: بانادول" required />
+          <${Input} label="الاسم الإنجليزي *" value=${values.medicineNameEn} onInput=${e => set('medicineNameEn', e.target.value)} placeholder="Panadol" dir="ltr" required />
+          <div class="grid gap-4 sm-grid-2">
+            <${Input} label="الاسم العلمي" value=${values.scientificName} onInput=${e => set('scientificName', e.target.value)} placeholder="Paracetamol" dir="ltr" />
+            <${Input} label="المادة الفعالة" value=${values.activeIngredient} onInput=${e => set('activeIngredient', e.target.value)} placeholder="Paracetamol" dir="ltr" />
+            <${Input} label="التركيز" value=${values.strength} onInput=${e => set('strength', e.target.value)} placeholder="500mg" dir="ltr" />
+            <${Input} label="الشكل الصيدلاني" value=${values.dosageForm} onInput=${e => set('dosageForm', e.target.value)} placeholder="أقراص / شراب / كبسولات" />
+          </div>
+          <div>
+            <label class="input-label">حالة التوفر *</label>
+            <div class="grid grid-cols-3 gap-2">
+              ${['available', 'low', 'out'].map(s => {
+                const active = values.availability === s;
+                const bg = active ? (s === 'available' ? 'var(--d600)' : s === 'low' ? 'var(--a500)' : 'var(--g600)') : '#fff';
+                return html`<button type="button" onClick=${() => set('availability', s)} class="text-sm font-semibold" style="min-height:44px;border-radius:12px;border:1px solid ${active ? bg : 'var(--g200)'};background:${bg};color:${active ? '#fff' : 'var(--g700)'}">${s === 'available' ? 'متوفر' : s === 'low' ? 'محدود' : 'غير متوفر'}</button>`;
+              })}
+            </div>
+          </div>
+          <${Input} label="الكمية التقريبية (اختياري)" value=${values.quantityApprox} onInput=${e => set('quantityApprox', e.target.value)} placeholder="مثال: أقل من 10 علب" />
+          <div>
+            <label class="input-label">صورة الدواء (اختياري)</label>
+            ${values.image && html`
+              <div class="flex items-center gap-3" style="margin-bottom:8px">
+                <img src=${values.image} alt="صورة الدواء" style="width:96px;height:96px;object-fit:cover;border-radius:12px;border:1px solid var(--g200)" />
+                <${Button} type="button" variant="ghost" size="md" onClick=${() => set('image', '')}>إزالة الصورة<//>
+              </div>
+            `}
+            <label class="btn btn-secondary btn-md" style="cursor:pointer">
+              <${IcoPlus} size=${16} /> ${imgBusy ? 'جارٍ تجهيز الصورة...' : (values.image ? 'تغيير الصورة' : 'اختيار صورة')}
+              <input type="file" accept="image/*" onChange=${onPickImage} style="display:none" />
+            </label>
+          </div>
+          ${error && html`<div class="alert alert-error"><span>${error}</span></div>`}
+          <div class="flex gap-2" style="padding-top:8px">
+            <${Link} href="/pharmacy/inventory" class="btn btn-ghost btn-lg">إلغاء<//>
+            <div class="flex-1"><${Button} type="submit" size="lg" block disabled=${saving}>${saving ? 'جارٍ الحفظ...' : submitLabel}<//></div>
+          </div>
+        </form>
+      <//>
+    </div>
+  `;
+}
+
+function AddMedicinePage() {
+  return html`<${InventoryForm} title="إضافة دواء جديد" submitLabel="إضافة" onSubmit=${async v => {
+    await createInventoryItem({
+      medicineNameAr: v.medicineNameAr, medicineNameEn: v.medicineNameEn,
+      scientificName: v.scientificName || undefined, activeIngredient: v.activeIngredient || undefined,
+      strength: v.strength || undefined, dosageForm: v.dosageForm || undefined,
+      availability: v.availability, quantityApprox: v.quantityApprox || undefined,
+      image: v.image || undefined
+    });
+  }} />`;
+}
+
+function EditMedicinePage({ route }) {
+  const { id } = route;
+  const [item, setItem] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) return;
+    getInventoryItem(id).then(i => setItem(i && i.pharmacyId === auth.currentUser?.uid ? i : null)).catch(() => setItem(null)).finally(() => setLoading(false));
+  }, [id]);
+
+  useEffect(() => { if (!loading && !item) navigate('/pharmacy/inventory'); }, [loading, item]);
+
+  if (loading) return html`<div class="spinner-wrap"><${Spinner} /></div>`;
+  if (!item) return null;
+
+  const initial = {
+    medicineNameAr: item.medicineNameAr, medicineNameEn: item.medicineNameEn,
+    scientificName: item.scientificName || '', activeIngredient: item.activeIngredient || '',
+    strength: item.strength || '', dosageForm: item.dosageForm || '',
+    availability: item.availability, quantityApprox: item.quantityApprox || '', image: item.image || ''
+  };
+
+  return html`<${InventoryForm} title=${'تعديل: ' + item.medicineNameAr} submitLabel="حفظ التعديلات" initial=${initial} onSubmit=${async v => {
+    await updateInventoryItem(item.id, {
+      medicineNameAr: v.medicineNameAr, medicineNameEn: v.medicineNameEn,
+      scientificName: v.scientificName || undefined, activeIngredient: v.activeIngredient || undefined,
+      strength: v.strength || undefined, dosageForm: v.dosageForm || undefined,
+      availability: v.availability, quantityApprox: v.quantityApprox || undefined,
+      image: v.image || undefined
+    });
+  }} />`;
+}
+
+function PharmacyProfilePage() {
+  const { nameOf } = useRegions();
+  const [pharmacy, setPharmacy] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+  const [values, setValues] = useState({ name: '', phone: '', whatsapp: '', address: '' });
+
+  useEffect(() => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    getDoc(doc(db, 'pharmacies', uid)).then(snap => {
+      if (snap.exists()) {
+        const p = { id: snap.id, ...snap.data() };
+        setPharmacy(p);
+        setValues({ name: p.name, phone: p.phone, whatsapp: p.whatsapp || '', address: p.address || '' });
+      }
+      setLoading(false);
+    }).catch(() => { setError('تعذر تحميل البيانات.'); setLoading(false); });
+  }, []);
+
+  const set = (k, v) => { setValues(p => ({ ...p, [k]: v })); setSuccess(false); };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!values.name.trim() || !values.phone.trim()) { setError('الاسم والهاتف مطلوبان.'); return; }
+    setSaving(true); setError(null); setSuccess(false);
+    try {
+      await updateDoc(doc(db, 'pharmacies', auth.currentUser.uid), {
+        name: values.name.trim(), phone: values.phone.trim(),
+        whatsapp: values.whatsapp.trim(), address: values.address.trim()
+      });
+      try {
+        await syncPharmacyToInventory({ ...pharmacy, name: values.name.trim(), phone: values.phone.trim(), whatsapp: values.whatsapp.trim() });
+        setSuccess(true);
+      } catch { setError('تم حفظ بياناتك، لكن تعذر تحديثها في نتائج البحث. أعد المحاولة أو تواصل مع الإدارة.'); }
+    } catch { setError('تعذر الحفظ.'); }
+    finally { setSaving(false); }
+  };
+
+  if (loading) return html`<div class="spinner-wrap"><${Spinner} /></div>`;
+  if (!pharmacy) return html`<${Card} class="text-center">لا توجد بيانات صيدلية مرتبطة بحسابك.<//>`;
+
+  return html`
+    <div style="max-width:42rem;display:flex;flex-direction:column;gap:16px">
+      <h1 style="font-size:20px;font-weight:800">بيانات الصيدلية</h1>
+      <div class="alert alert-info">
+        <${IcoInfo} size=${18} style="flex-shrink:0;margin-top:2px" />
+        <div class="text-sm" style="line-height:1.7">تغيير الاسم أو الهاتف أو الواتساب يُحدَّث تلقائيًا في كل أدويتك الظاهرة في نتائج البحث.</div>
+      </div>
+      <${Card}>
+        <form onSubmit=${submit} style="display:flex;flex-direction:column;gap:16px">
+          <${Input} label="اسم الصيدلية *" value=${values.name} onInput=${e => set('name', e.target.value)} required />
+          <div class="grid gap-4 sm-grid-2">
+            <${Input} label="الهاتف *" value=${values.phone} onInput=${e => set('phone', e.target.value)} dir="ltr" required />
+            <${Input} label="واتساب" value=${values.whatsapp} onInput=${e => set('whatsapp', e.target.value)} dir="ltr" />
+          </div>
+          <${Input} label="العنوان" value=${values.address} onInput=${e => set('address', e.target.value)} />
+          <div style="background:var(--g50);border:1px solid var(--g100);padding:12px;border-radius:12px" class="text-sm">
+            <div class="text-xs text-gray-500" style="margin-bottom:4px">المنطقة (تُدار من الإدارة)</div>
+            <div class="flex items-center gap-1.5 text-gray-900 font-medium"><${IcoMapPin} size=${14} /> ${nameOf(pharmacy.areaId)}</div>
+          </div>
+          ${error && html`<div class="alert alert-error"><span>${error}</span></div>`}
+          ${success && html`<div class="alert alert-success"><span>تم الحفظ بنجاح.</span></div>`}
+          <${Button} type="submit" size="lg" block disabled=${saving}>${saving ? 'جارٍ الحفظ...' : 'حفظ التعديلات'}<//>
+        </form>
+      <//>
+    </div>
+  `;
+}
+
+/* ============================================================
+   🛡️  Admin Pages
+   ============================================================ */
+function AdminDashboardPage() {
+  const [stats, setStats] = useState(null);
+  const [error, setError] = useState(null);
+  const [rb, setRb] = useState(null);
+
+  useEffect(() => {
+    loadPlatformStats().then(setStats).catch(() => setError('تعذر تحميل الإحصاءات.'));
+  }, []);
+
+  return html`
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div>
+        <h1 style="font-size:20px;font-weight:800">نظرة عامة</h1>
+        <p class="text-sm text-gray-600" style="margin-top:2px">ملخص حالة المنصة.</p>
+      </div>
+      ${error && html`<div class="alert alert-error"><${IcoAlertCircle} size=${18} /><span>${error}</span></div>`}
+      ${!stats && !error && html`<div class="spinner-wrap"><${Spinner} /></div>`}
+      ${stats && html`
+        <div class="grid gap-3 sm-grid-2 lg-grid-4">
+          ${[
+            { icon: IcoStore, label: 'إجمالي الصيدليات', value: stats.pharmaciesTotal },
+            { icon: IcoCheckCircle, label: 'صيدليات مفعّلة', value: stats.pharmaciesActive, accent: true },
+            { icon: IcoPackage, label: 'أصناف في المخزون', value: stats.inventoryTotal },
+            { icon: IcoUsers, label: 'المستخدمون', value: stats.usersTotal }
+          ].map((s, i) => html`
+            <div class="card">
+              <div class="flex items-center gap-2 text-xs font-medium text-gray-500">
+                <span class="w-7 flex items-center justify-center" style="background:${s.accent ? 'var(--d50)' : 'var(--g100)'};color:${s.accent ? 'var(--d700)' : 'var(--g600)'};border-radius:8px"><${s.icon} size=${18} /><//>
+                ${s.label}
+              </div>
+              <div style="margin-top:8px;font-size:30px;font-weight:800" class="text-gray-900 tabular-nums">${s.value}</div>
+            </div>
+          `)}
+        </div>
+      `}
+      <div class="grid gap-3 sm-grid-2">
+        <${Link} href="/admin/pharmacies/new" class="card hover-shadow">
+          <div class="font-bold text-gray-900">إضافة صيدلية</div>
+          <p class="text-sm text-gray-600" style="margin-top:4px;line-height:1.7">أنشئ حساب صيدلية جديدة بعد إضافة بريدها في Firebase Console.</p>
+        <//>
+        <div class="card">
+          <div class="font-bold text-gray-900">إعادة بناء فهرس البحث</div>
+          <p class="text-sm text-gray-600" style="margin-top:4px;line-height:1.7">شغّله مرة واحدة بعد هذا التحديث ليظهر كل دواء قديم عند البحث بالاسم العلمي والمادة الفعالة.</p>
+          <${Button} variant="secondary" size="md" class="mt-3" disabled=${rb === 'busy'} onClick=${async () => { setRb('busy'); try { const n = await rebuildSearchIndex(); setRb('تم تحديث ' + n + ' صنفًا.'); } catch { setRb('تعذر التنفيذ.'); } }}>${rb === 'busy' ? 'جارٍ التنفيذ...' : 'ابدأ'}<//>
+          ${rb && rb !== 'busy' && html`<div class="text-xs" style="color:var(--d700);margin-top:8px">${rb}</div>`}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function AdminPharmaciesPage() {
+  const [pharmacies, setPharmacies] = useState(null);
+  const [error, setError] = useState(null);
+  const [q, setQ] = useState('');
+  const [busy, setBusy] = useState(null);
+  const { nameOf: regionName } = useRegions();
+
+  useEffect(() => {
+    listPharmacies()
+      .then(p => setPharmacies(p))
+      .catch(() => setError('تعذر تحميل البيانات.'));
+  }, []);
+
+
+  const filtered = useMemo(() => {
+    if (!pharmacies) return [];
+    if (!q.trim()) return pharmacies;
+    const na = normalizeArabic(q);
+    return pharmacies.filter(p => normalizeArabic(p.name).includes(na) || (p.phone || '').includes(q.trim()));
+  }, [pharmacies, q]);
+
+  const toggle = async (p) => {
+    if (!confirm(`${p.isActive ? 'إيقاف' : 'تفعيل'} «${p.name}»؟\n${p.isActive ? 'ستختفي أدويتها من البحث.' : 'ستظهر أدويتها في البحث.'}`)) return;
+    setBusy(p.id);
+    try {
+      await setPharmacyActive(p.id, !p.isActive);
+      setPharmacies(list => list.map(x => x.id === p.id ? { ...x, isActive: !x.isActive } : x));
+    } catch { alert('تعذر تحديث الحالة.'); }
+    finally { setBusy(null); }
+  };
+
+  return html`
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h1 style="font-size:20px;font-weight:800">الصيدليات</h1>
+          <p class="text-sm text-gray-600" style="margin-top:2px">${pharmacies ? pharmacies.length + ' صيدلية' : '—'}</p>
+        </div>
+        <${Link} href="/admin/pharmacies/new"><${Button}><${IcoPlus} size=${18} /> إضافة<//><//>
+      </div>
+      <div class="relative">
+        <span class="absolute top-half translate-y-half end-3" style="color:var(--g400);pointer-events:none"><${IcoSearch} size=${18} /></span>
+        <input class="input" style="padding-inline-end:40px" placeholder="ابحث باسم الصيدلية أو الهاتف..." value=${q} onInput=${e => setQ(e.target.value)} />
+      </div>
+      ${error && html`<div class="alert alert-error"><span>${error}</span></div>`}
+      ${!pharmacies && !error && html`<div class="spinner-wrap"><${Spinner} /></div>`}
+      ${pharmacies && filtered.length === 0 && html`<${EmptyState} icon=${h(IcoStore, { size: 22 })} title="لا توجد صيدليات" body=${pharmacies.length === 0 ? 'ابدأ بإضافة أول صيدلية.' : 'لا توجد نتائج لهذا البحث.'} />`}
+      ${filtered.length > 0 && html`
+        <div class="grid gap-3">
+          ${filtered.map(p => html`
+            <div class="card">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="font-bold text-gray-900 truncate">${p.name}</span>
+                    <span class="text-11 font-semibold" style="padding:2px 8px;border-radius:9999px;border:1px solid ${p.isActive ? 'var(--d200)' : 'var(--g200)'};background:${p.isActive ? 'var(--d50)' : 'var(--g100)'};color:${p.isActive ? 'var(--d700)' : 'var(--g600)'}">${p.isActive ? 'مفعّلة' : 'موقوفة'}</span>
+                  </div>
+                  <div class="text-sm text-gray-600" style="margin-top:4px">${regionName(p.areaId)} • ${p.phone}</div>
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                  <${Link} href=${'/admin/pharmacies/' + p.id} class="icon-btn" aria-label="تعديل"><${IcoPencil} size=${17} /><//>
+                  <button class="icon-btn ${p.isActive ? 'icon-btn-danger' : 'icon-btn-primary'}" onClick=${() => toggle(p)} disabled=${busy === p.id} aria-label=${p.isActive ? 'إيقاف' : 'تفعيل'}><${IcoPower} size=${17} /></button>
+                </div>
+              </div>
+            </div>
+          `)}
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function AdminPharmacyFormPage({ route }) {
+  const { id } = route;
+  const isEdit = Boolean(id);
+  const [values, setValues] = useState({ uid: '', email: '', name: '', areaId: '', phone: '', whatsapp: '', address: '' });
+  const regions = REGION_LIST;
+  const [loading, setLoading] = useState(isEdit);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncedCount, setSyncedCount] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+
+    
+    if (isEdit && id) {
+      getPharmacy(id).then(p => {
+        if (p) setValues({ uid: p.id, email: '', name: p.name, areaId: p.areaId, phone: p.phone, whatsapp: p.whatsapp || '', address: p.address || '' });
+        if (active) setLoading(false);
+      }).catch(() => { if (active) setLoading(false); });
+    }
+    return () => { active = false; };
+  }, [id, isEdit]);
+
+  const set = (k, v) => setValues(p => ({ ...p, [k]: v }));
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    if (!values.name.trim() || !values.areaId || !values.phone.trim()) { setError('الاسم والمنطقة والهاتف مطلوبة.'); return; }
+    if (!isEdit && !values.uid.trim()) { setError('معرّف المستخدم (UID) مطلوب.'); return; }
+    setSaving(true);
+    try {
+      if (isEdit && id) {
+        await updatePharmacy(id, { name: values.name, areaId: values.areaId, phone: values.phone, whatsapp: values.whatsapp, address: values.address });
+      } else {
+        await createPharmacyWithUser({ uid: values.uid, email: values.email, name: values.name, areaId: values.areaId, phone: values.phone, whatsapp: values.whatsapp || undefined, address: values.address || undefined });
+      }
+      navigate('/admin/pharmacies');
+    } catch (err) {
+      const msgs = { USER_EXISTS: 'يوجد مستخدم بهذا المعرّف مسبقًا.', PHARMACY_EXISTS: 'توجد صيدلية بهذا المعرّف مسبقًا.', INVALID_UID: 'معرّف المستخدم غير صالح.' };
+      setError(msgs[err?.message] || 'تعذر الحفظ.');
+    } finally { setSaving(false); }
+  };
+
+  const handleSync = async () => {
+    if (!id) return;
+    if (!confirm('سيتم تحديث الاسم والهاتف والمنطقة في كل أدوية الصيدلية. متابعة؟')) return;
+    setSyncing(true); setSyncedCount(null);
+    try {
+      const p = await getPharmacy(id);
+      if (!p) throw new Error('NOT_FOUND');
+      const n = await syncPharmacyToInventory(p);
+      setSyncedCount(n);
+    } catch { alert('تعذرت المزامنة.'); }
+    finally { setSyncing(false); }
+  };
+
+  if (loading) return html`<div class="spinner-wrap"><${Spinner} /></div>`;
+
+  return html`
+    <div style="max-width:42rem;display:flex;flex-direction:column;gap:16px">
+      <h1 style="font-size:20px;font-weight:800">${isEdit ? 'تعديل صيدلية' : 'إضافة صيدلية جديدة'}</h1>
+      ${!isEdit && html`
+        <div class="alert alert-info">
+          <${IcoInfo} size=${18} style="flex-shrink:0;margin-top:2px" />
+          <div class="text-sm" style="line-height:1.75">
+            <strong style="display:block;margin-bottom:4px">قبل المتابعة:</strong>
+            1. Firebase Console → Authentication → Add user (بريد وكلمة مرور).<br />
+            2. انسخ <code style="background:var(--b200);padding:1px 4px;border-radius:4px">UID</code> الخاص بالمستخدم.<br />
+            3. الصقه أدناه، واملأ بيانات الصيدلية.
+          </div>
+        </div>
+      `}
+      <${Card}>
+        <form onSubmit=${submit} style="display:flex;flex-direction:column;gap:16px">
+          ${!isEdit && html`
+            <${Input} label="معرّف المستخدم (UID) *" value=${values.uid} onInput=${e => set('uid', e.target.value)} dir="ltr" placeholder="من Firebase Console" required />
+            <${Input} label="البريد الإلكتروني (مرجعي)" type="email" value=${values.email} onInput=${e => set('email', e.target.value)} dir="ltr" />
+          `}
+          <${Input} label="اسم الصيدلية *" value=${values.name} onInput=${e => set('name', e.target.value)} placeholder="صيدلية النور" required />
+          <div>
+            <label class="input-label">المنطقة *</label>
+            <select class="input" value=${values.areaId} onChange=${e => set('areaId', e.target.value)} required>
+              <option value="">— اختر —</option>
+              ${regions.map(r => html`<option key=${r.id} value=${r.id}>${r.nameAr}</option>`)}
+            </select>
+          </div>
+          <div class="grid gap-4 sm-grid-2">
+            <${Input} label="الهاتف *" value=${values.phone} onInput=${e => set('phone', e.target.value)} placeholder="0599123456" dir="ltr" required />
+            <${Input} label="واتساب" value=${values.whatsapp} onInput=${e => set('whatsapp', e.target.value)} placeholder="970599123456" dir="ltr" />
+          </div>
+          <${Input} label="العنوان" value=${values.address} onInput=${e => set('address', e.target.value)} placeholder="شارع عمر المختار، مقابل..." />
+          ${isEdit && html`
+            <div style="background:var(--g50);border:1px solid var(--g200);padding:12px;border-radius:12px" class="text-sm">
+              <div class="font-medium text-gray-800">مزامنة البيانات إلى المخزون</div>
+              <p class="text-xs text-gray-600" style="margin-top:4px;line-height:1.65">يحدّث اسم الصيدلية وهاتفها ومنطقتها في كل أدويتها. استخدمه بعد تغيير الاسم أو الهاتف.</p>
+              <${Button} type="button" variant="secondary" size="md" onClick=${handleSync} disabled=${syncing} class="mt-2">
+                <span class=${syncing ? 'spin' : ''}><${IcoRefresh} size=${16} /></span>
+                ${syncing ? 'جارٍ المزامنة...' : 'مزامنة الآن'}
+              <//>
+              ${syncedCount !== null && html`<div class="text-xs" style="color:var(--d700);margin-top:8px">تم تحديث ${syncedCount} صنفًا.</div>`}
+            </div>
+          `}
+          ${error && html`<div class="alert alert-error"><span>${error}</span></div>`}
+          <div class="flex gap-2" style="padding-top:8px">
+            <${Link} href="/admin/pharmacies" class="btn btn-ghost btn-lg">إلغاء<//>
+            <div class="flex-1"><${Button} type="submit" size="lg" block disabled=${saving}>${saving ? 'جارٍ الحفظ...' : (isEdit ? 'حفظ التعديلات' : 'إنشاء الصيدلية')}<//></div>
+          </div>
+        </form>
+      <//>
+    </div>
+  `;
+}
+
+function AdminUsersPage() {
+  const [users, setUsers] = useState(null);
+  const [error, setError] = useState(null);
+  const [busy, setBusy] = useState(null);
+
+  useEffect(() => {
+    listUsers().then(setUsers).catch(() => setError('تعذر تحميل المستخدمين.'));
+  }, []);
+
+  const roleLabel = { admin: 'مدير', pharmacy: 'صيدلية', citizen: 'مواطن' };
+
+  const toggle = async (u) => {
+    const active = u.isActive !== false;
+    if (!confirm(`${active ? 'إيقاف' : 'تفعيل'} حساب ${u.displayName || u.uid}؟`)) return;
+    setBusy(u.uid);
+    try {
+      await setUserActive(u.uid, !active);
+      setUsers(list => list.map(x => x.uid === u.uid ? { ...x, isActive: !active } : x));
+    } catch { alert('تعذر التحديث.'); }
+    finally { setBusy(null); }
+  };
+
+  return html`
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div>
+        <h1 style="font-size:20px;font-weight:800">المستخدمون</h1>
+        <p class="text-sm text-gray-600" style="margin-top:2px">${users ? users.length + ' مستخدم' : '—'}</p>
+      </div>
+      ${error && html`<div class="alert alert-error"><span>${error}</span></div>`}
+      ${!users && !error && html`<div class="spinner-wrap"><${Spinner} /></div>`}
+      ${users && users.length === 0 && html`<${EmptyState} icon=${h(IcoUsers, { size: 22 })} title="لا يوجد مستخدمون" body="أضف حسابات من Firebase Console ثم أنشئ مستنداتها هنا." />`}
+      <div class="grid gap-3">
+        ${users && users.map(u => {
+          const active = u.isActive !== false;
+          return html`
+            <div class="card flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="font-bold text-gray-900 truncate">${u.displayName || u.uid.slice(0, 8)}</div>
+                <div class="text-xs text-gray-500 truncate" dir="ltr">${u.email || u.uid}</div>
+                <div class="flex items-center gap-2" style="margin-top:4px">
+                  <span class="text-11 font-semibold" style="padding:2px 8px;border-radius:9999px;background:var(--g100);color:var(--g700)">${roleLabel[u.role] || u.role}</span>
+                  <span class="text-11 font-semibold" style="padding:2px 8px;border-radius:9999px;border:1px solid ${active ? 'var(--d200)' : 'var(--g200)'};background:${active ? 'var(--d50)' : 'var(--g100)'};color:${active ? 'var(--d700)' : 'var(--g600)'}">${active ? 'مفعّل' : 'موقوف'}</span>
+                </div>
+              </div>
+              <button class="icon-btn ${active ? 'icon-btn-danger' : 'icon-btn-primary'}" onClick=${() => toggle(u)} disabled=${busy === u.uid} aria-label=${active ? 'إيقاف' : 'تفعيل'}><${IcoPower} size=${17} /></button>
+            </div>
+          `;
+        })}
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   🧭  App Router
+   ============================================================ */
+function App() {
+  const route = useRoute();
+  const { path, params } = route;
+
+  // Public routes
+  if (path === '/' || path === '') return h(PublicLayout, null, h(HomePage));
+  if (path === '/search') return h(PublicLayout, null, h(SearchPage, { route: { params } }));
+  if (path === '/about') return h(PublicLayout, null, h(AboutPage));
+  if (path === '/privacy') return h(PublicLayout, null, h(PrivacyPage));
+  if (path === '/login') return h(LoginPage);
+
+  // Medicine details
+  const medParams = matchPath('/medicine/:id', path);
+  if (medParams) return h(PublicLayout, null, h(MedicineDetailsPage, { route: { id: medParams.id } }));
+
+  // Pharmacy
+  if (path === '/pharmacy') return h(RequireRole, { allow: ['pharmacy'] }, h(PharmacyLayout, null, h(PharmacyDashboardPage)));
+  if (path === '/pharmacy/inventory') return h(RequireRole, { allow: ['pharmacy'] }, h(PharmacyLayout, null, h(PharmacyInventoryPage)));
+  if (path === '/pharmacy/inventory/new') return h(RequireRole, { allow: ['pharmacy'] }, h(PharmacyLayout, null, h(AddMedicinePage)));
+  const editInvParams = matchPath('/pharmacy/inventory/:id', path);
+  if (editInvParams) return h(RequireRole, { allow: ['pharmacy'] }, h(PharmacyLayout, null, h(EditMedicinePage, { route: { id: editInvParams.id } })));
+  if (path === '/pharmacy/profile') return h(RequireRole, { allow: ['pharmacy'] }, h(PharmacyLayout, null, h(PharmacyProfilePage)));
+
+  // Admin
+  if (path === '/admin') return h(RequireRole, { allow: ['admin'] }, h(AdminLayout, null, h(AdminDashboardPage)));
+  if (path === '/admin/pharmacies') return h(RequireRole, { allow: ['admin'] }, h(AdminLayout, null, h(AdminPharmaciesPage)));
+  if (path === '/admin/pharmacies/new') return h(RequireRole, { allow: ['admin'] }, h(AdminLayout, null, h(AdminPharmacyFormPage, { route: { id: null } })));
+  const editPhParams = matchPath('/admin/pharmacies/:id', path);
+  if (editPhParams) return h(RequireRole, { allow: ['admin'] }, h(AdminLayout, null, h(AdminPharmacyFormPage, { route: { id: editPhParams.id } })));
+  if (path === '/admin/users') return h(RequireRole, { allow: ['admin'] }, h(AdminLayout, null, h(AdminUsersPage)));
+
+  // 404
+  return h(PublicLayout, null, h('div', { class: 'container', style: 'padding:48px 16px;text-align:center' },
+    h('h1', { style: 'font-size:24px;font-weight:800' }, 'الصفحة غير موجودة'),
+    h(Link, { href: '/', class: 'link-primary', style: 'margin-top:12px;display:inline-block' }, 'العودة للرئيسية')
+  ));
+}
+
+// تحسينات الواجهة: ظل للشريط العلوي عند التمرير + حركة عند تغيير الصفحة
+window.addEventListener('scroll', () => document.body.classList.toggle('scrolled', window.scrollY > 4), { passive: true });
+window.addEventListener('hashchange', () => {
+  const m = document.querySelector('main');
+  if (!m) return;
+  m.classList.remove('page-in'); void m.offsetWidth; m.classList.add('page-in');
+  window.scrollTo({ top: 0 });
+});
+
+// Boot
+document.getElementById('boot')?.remove();
+render(h(AuthProvider, null, h(App)), document.getElementById('app'));
+</script>
+</body>
+</html>
